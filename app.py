@@ -109,7 +109,7 @@ LINEUPS = [
 ]
 
 # ==========================================
-# القوالب (HTML) - تصميم احترافي يطابق الصورة
+# القوالب (HTML) - تصميم النيون والزجاج
 # ==========================================
 BASE_HTML = """
 <!DOCTYPE html>
@@ -125,59 +125,97 @@ BASE_HTML = """
         :root { 
             --primary: #0f172a; 
             --secondary: #d4af37; 
-            --bg: #f1f5f9; 
-            --card-bg: #ffffff;
-            --green-dark: #064e3b;
-            --green-light: #ecfdf5;
+            --green-neon: #10b981;
+            --gold-neon: #fbbf24;
+            --bg-dark: #020617;
+            --card-bg: rgba(15, 23, 42, 0.6);
         }
-        body { font-family: 'Tajawal', sans-serif; background-color: var(--bg); padding-bottom: 75px; color: #1e293b; }
+        body { 
+            font-family: 'Tajawal', sans-serif; 
+            background: var(--bg-dark) url('https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2070&auto=format&fit=crop') no-repeat center center/cover;
+            background-attachment: fixed;
+            color: #e2e8f0; 
+            padding-bottom: 75px;
+            min-height: 100vh;
+        }
         
+        /* تأثير الزجاج */
+        .glass-panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
         /* الشريط العلوي */
-        .top-navbar { background: var(--green-dark); color: white; padding: 12px 20px; position: sticky; top: 0; z-index: 1000; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .top-navbar .brand { color: var(--secondary); font-weight: 800; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
-        .top-navbar .brand img { width: 30px; height: 30px; object-fit: contain; }
+        .top-navbar { 
+            background: rgba(2, 6, 23, 0.8); 
+            backdrop-filter: blur(10px);
+            padding: 12px 20px; 
+            position: sticky; top: 0; z-index: 1000; 
+            display: flex; justify-content: space-between; align-items: center; 
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+        }
+        .top-navbar .brand { color: var(--gold-neon); font-weight: 800; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
         
         /* الشريط السفلي */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index: 1000; border-top: 1px solid #e2e8f0; }
-        .bottom-nav a { color: #64748b; text-decoration: none; display: flex; flex-direction: column; align-items: center; font-size: 0.7rem; font-weight: 600; position: relative; transition: 0.3s; }
-        .bottom-nav a.active { color: var(--green-dark); }
+        .bottom-nav { 
+            position: fixed; bottom: 0; left: 0; right: 0; 
+            background: rgba(2, 6, 23, 0.9); 
+            backdrop-filter: blur(10px);
+            display: flex; justify-content: space-around; padding: 10px 0; 
+            z-index: 1000; border-top: 1px solid rgba(16, 185, 129, 0.3); 
+        }
+        .bottom-nav a { color: #94a3b8; text-decoration: none; display: flex; flex-direction: column; align-items: center; font-size: 0.7rem; font-weight: 600; position: relative; transition: 0.3s; }
+        .bottom-nav a.active { color: var(--green-neon); text-shadow: 0 0 8px var(--green-neon); }
         .bottom-nav i { font-size: 1.4rem; margin-bottom: 4px; }
-        .badge-notify { background-color: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.65rem; position: absolute; top: -6px; left: -8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .badge-notify { background-color: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.65rem; position: absolute; top: -6px; left: -8px; box-shadow: 0 0 10px #ef4444; }
 
-        /* الكروت */
-        .post-card { background: var(--card-bg); border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; }
-        .profile-pic { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; }
-        .media-content { max-width: 100%; border-radius: 12px; margin-top: 10px; max-height: 400px; object-fit: contain; }
-
-        /* تصميم الملعب ثلاثي الأبعاد */
-        .pitch-container { position: relative; width: 100%; max-width: 600px; margin: 0 auto; aspect-ratio: 16 / 10; background: #1e5631; border-radius: 10px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); overflow: hidden; transform: perspective(800px) rotateX(20deg); margin-top: 20px; }
-        .pitch-lines { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border: 2px solid rgba(255,255,255,0.4); margin: 10px; border-radius: 5px; }
-        .pitch-lines::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.4); }
-        .pitch-lines::after { content: ''; position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; transform: translate(-50%, -50%); }
-        .penalty-top { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 150px; height: 50px; border: 2px solid rgba(255,255,255,0.4); border-top: none; }
-        .penalty-bottom { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); width: 150px; height: 50px; border: 2px solid rgba(255,255,255,0.4); border-bottom: none; }
+        /* تصميم الملعب 3D النيون */
+        .pitch-container { 
+            position: relative; width: 100%; max-width: 600px; margin: 20px auto; aspect-ratio: 16 / 10; 
+            background: rgba(16, 185, 129, 0.1); 
+            border: 2px solid var(--green-neon);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3), inset 0 0 20px rgba(16, 185, 129, 0.2);
+            border-radius: 10px; 
+            transform: perspective(800px) rotateX(25deg); 
+            overflow: hidden; 
+        }
+        .pitch-lines { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border: 2px solid rgba(16, 185, 129, 0.5); margin: 10px; border-radius: 5px; }
+        .pitch-lines::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: rgba(16, 185, 129, 0.5); }
+        .pitch-lines::after { content: ''; position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; border: 2px solid rgba(16, 185, 129, 0.5); border-radius: 50%; transform: translate(-50%, -50%); }
+        .penalty-top { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 150px; height: 50px; border: 2px solid rgba(16, 185, 129, 0.5); border-top: none; }
+        .penalty-bottom { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); width: 150px; height: 50px; border: 2px solid rgba(16, 185, 129, 0.5); border-bottom: none; }
         
         .player-node { position: absolute; transform: translate(-50%, -50%); text-align: center; display: flex; flex-direction: column; align-items: center; width: 80px; }
-        .player-circle { background: white; color: var(--green-dark); width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1rem; border: 2px solid #ddd; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin-bottom: 3px; }
-        .player-name { background: rgba(0,0,0,0.7); color: white; font-weight: 700; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
+        .player-circle { 
+            background: rgba(2, 6, 23, 0.9); color: var(--green-neon); 
+            width: 35px; height: 35px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            font-weight: 900; font-size: 1rem; 
+            border: 2px solid var(--green-neon); 
+            box-shadow: 0 0 10px var(--green-neon); 
+            margin-bottom: 3px; 
+        }
+        .player-name { background: rgba(16, 185, 129, 0.8); color: white; font-weight: 700; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; white-space: nowrap; box-shadow: 0 0 5px var(--green-neon); }
 
-        /* دردشة واتساب */
-        .chat-container { display: flex; flex-direction: column; height: calc(100vh - 130px); background: #efeae2 url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); border-radius: 0 0 20px 20px; overflow: hidden; }
-        .chat-header { background: var(--green-dark); color: white; padding: 12px 15px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; }
-        .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; }
-        .msg-bubble { max-width: 80%; padding: 10px 14px; border-radius: 12px; margin-bottom: 10px; font-size: 0.95rem; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .msg-sent { background: #d9fdd3; align-self: flex-end; border-top-right-radius: 2px; }
-        .msg-received { background: #ffffff; align-self: flex-start; border-top-left-radius: 2px; }
-        .chat-input { background: #f0f2f5; padding: 10px 15px; display: flex; gap: 10px; align-items: center; }
-
-        /* المنشورات */
-        .post-actions { display: flex; justify-content: space-between; padding-top: 10px; border-top: 1px solid #f1f5f9; }
-        .post-action-btn { color: #64748b; text-decoration: none; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 5px; }
-        .post-action-btn:hover { color: var(--green-dark); }
+        /* أيقونات المنشورات */
+        .post-action-btn { color: #94a3b8; text-decoration: none; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 5px; transition: 0.3s; }
+        .post-action-btn:hover { color: var(--green-neon); text-shadow: 0 0 8px var(--green-neon); }
         
-        /* إشعار */
-        .welcome-box { background: white; border-radius: 20px; padding: 40px 20px; text-align: center; margin-top: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        .welcome-box img { width: 100px; margin-bottom: 20px; }
+        /* الملف الشخصي */
+        .profile-card { border: 1px solid var(--gold-neon); box-shadow: 0 0 20px rgba(251, 191, 36, 0.2); }
+        .welcome-box { text-align: center; padding: 40px 20px; border: 1px solid var(--green-neon); box-shadow: 0 0 30px rgba(16, 185, 129, 0.2); }
+        .welcome-box h2 { color: var(--green-neon); text-shadow: 0 0 15px rgba(16, 185, 129, 0.6); font-weight: 800; }
+        
+        /* الحقول */
+        .form-control { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; }
+        .form-control:focus { background: rgba(255,255,255,0.1); border-color: var(--green-neon); box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); color: white; }
+        .form-control::placeholder { color: #94a3b8; }
     </style>
 </head>
 <body>
@@ -226,45 +264,45 @@ BASE_HTML = """
 """
 
 INDEX_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
-<div class="welcome-box">
-    <img src="https://cdn-icons-png.flaticon.com/512/40/40193.png" alt="Eagle">
-    <h2 style="color: var(--green-dark); font-weight: 800;">نسور حجرودسالم</h2>
-    <p class="text-muted">أهلاً بك يا {{ current_user.username }}</p>
-    <p class="text-muted">هذا هو الموقع الرسمي للنادي.</p>
+<div class="glass-panel welcome-box">
+    <i class="fas fa-dove fa-4x" style="color: var(--gold-neon); text-shadow: 0 0 20px rgba(251, 191, 36, 0.6); margin-bottom: 20px;"></i>
+    <h2>نسور حجرودسالم</h2>
+    <p class="text-light mt-3">أهلاً بك يا {{ current_user.username }}</p>
+    <p class="text-muted" style="color: #94a3b8 !important;">هذا هو الموقع الرسمي للنادي.</p>
 </div>
 """)
 
 LOGIN_PAGE = BASE_HTML.replace('{% block content %}{% endblock %}', """
-<div class="post-card" style="max-width: 400px; margin: 50px auto; padding: 30px;">
-    <h3 class="text-center mb-4" style="color: var(--green-dark); font-weight: 800;">تسجيل الدخول</h3>
+<div class="glass-panel" style="max-width: 400px; margin: 50px auto;">
+    <h3 class="text-center mb-4" style="color: var(--green-neon); font-weight: 800; text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);">تسجيل الدخول</h3>
     <form method="POST">
-        <div class="mb-3"><label class="form-label">اسم المستخدم</label><input type="text" name="username" class="form-control" required></div>
-        <div class="mb-3"><label class="form-label">كلمة المرور</label><input type="password" name="password" class="form-control" required></div>
-        <button type="submit" class="btn w-100" style="background:var(--green-dark); color:white; font-weight: bold;">دخول</button>
+        <div class="mb-3"><label class="form-label text-light">اسم المستخدم</label><input type="text" name="username" class="form-control" required></div>
+        <div class="mb-3"><label class="form-label text-light">كلمة المرور</label><input type="password" name="password" class="form-control" required></div>
+        <button type="submit" class="btn w-100" style="background: var(--green-neon); color: #020617; font-weight: bold; box-shadow: 0 0 15px var(--green-neon);">دخول</button>
     </form>
-    <p class="text-center mt-3"><a href="/register" class="text-decoration-none">ليس لديك حساب؟ سجل الآن</a></p>
+    <p class="text-center mt-3"><a href="/register" class="text-decoration-none" style="color: var(--gold-neon);">ليس لديك حساب؟ سجل الآن</a></p>
 </div>
 """)
 
 REGISTER_PAGE = BASE_HTML.replace('{% block content %}{% endblock %}', """
-<div class="post-card" style="max-width: 400px; margin: 50px auto; padding: 30px;">
-    <h3 class="text-center mb-4" style="color: var(--green-dark); font-weight: 800;">إنشاء حساب جديد</h3>
+<div class="glass-panel" style="max-width: 400px; margin: 50px auto;">
+    <h3 class="text-center mb-4" style="color: var(--green-neon); font-weight: 800; text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);">إنشاء حساب جديد</h3>
     <form method="POST" enctype="multipart/form-data">
-        <div class="mb-3"><label class="form-label">اسم المستخدم</label><input type="text" name="username" class="form-control" required></div>
-        <div class="mb-3"><label class="form-label">كلمة المرور</label><input type="password" name="password" class="form-control" required></div>
+        <div class="mb-3"><label class="form-label text-light">اسم المستخدم</label><input type="text" name="username" class="form-control" required></div>
+        <div class="mb-3"><label class="form-label text-light">كلمة المرور</label><input type="password" name="password" class="form-control" required></div>
         <div class="mb-3">
-            <label class="form-label">صورة الحساب (اختياري)</label>
+            <label class="form-label text-light">صورة الحساب (اختياري)</label>
             <input type="file" name="profile_pic" class="form-control" accept="image/*">
         </div>
-        <button type="submit" class="btn w-100" style="background:var(--green-dark); color:white; font-weight: bold;">تسجيل</button>
+        <button type="submit" class="btn w-100" style="background: var(--green-neon); color: #020617; font-weight: bold; box-shadow: 0 0 15px var(--green-neon);">تسجيل</button>
     </form>
-    <p class="text-center mt-3"><a href="/login" class="text-decoration-none">لديك حساب؟ سجل دخولك</a></p>
+    <p class="text-center mt-3"><a href="/login" class="text-decoration-none" style="color: var(--gold-neon);">لديك حساب؟ سجل دخولك</a></p>
 </div>
 """)
 
 PLAYERS_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="container mt-3">
-    <h4 class="text-center mb-3" style="color: var(--green-dark); font-weight: 800;">⭐⭐⭐⭐⭐ التشكيلة الأساسية</h4>
+    <h4 class="text-center mb-3" style="color: var(--gold-neon); font-weight: 800; text-shadow: 0 0 15px rgba(251, 191, 36, 0.6);">⭐⭐⭐⭐⭐ التشكيلة الأساسية</h4>
     <div class="pitch-container">
         <div class="pitch-lines"></div>
         <div class="penalty-top"></div>
@@ -281,14 +319,14 @@ PLAYERS_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 
 MATCHES_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="container mt-3">
-    <h4 class="text-center mb-3" style="color: var(--green-dark); font-weight: 800;">📅 جدول المباريات</h4>
-    <div class="post-card text-center">
+    <h4 class="text-center mb-3" style="color: var(--gold-neon); font-weight: 800; text-shadow: 0 0 15px rgba(251, 191, 36, 0.6);">📅 جدول المباريات</h4>
+    <div class="glass-panel text-center">
         <span class="badge bg-info text-dark mb-2">قادمة</span>
-        <h5>2026-11-01 | 17:00</h5>
+        <h5 class="text-light">2026-11-01 | 17:00</h5>
         <div class="d-flex justify-content-between align-items-center mt-3">
-            <span class="fw-bold fs-5">نسور حجرودسالم</span>
-            <span class="text-warning fw-bold fs-4">VS</span>
-            <span class="fw-bold fs-5">فريق الوحدة</span>
+            <span class="fw-bold fs-5 text-light">نسور حجرودسالم</span>
+            <span class="fw-bold fs-4" style="color: var(--gold-neon); text-shadow: 0 0 10px var(--gold-neon);">VS</span>
+            <span class="fw-bold fs-5 text-light">فريق الوحدة</span>
         </div>
     </div>
 </div>
@@ -296,47 +334,46 @@ MATCHES_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 
 FEED_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="container mt-3">
-    <!-- نموذج النشر -->
-    <div class="post-card mb-3">
+    <div class="glass-panel mb-3">
         <form method="POST" enctype="multipart/form-data">
             <div class="d-flex align-items-center gap-2 mb-2">
                 <div class="bg-secondary rounded-circle d-flex justify-content-center align-items-center" style="width: 40px; height: 40px; color: white;"><i class="fas fa-user"></i></div>
-                <input type="text" name="content" class="form-control" placeholder="ماذا يدور في ذهنك يا نسر؟" required style="border-radius: 20px; background: #f1f5f9;">
+                <input type="text" name="content" class="form-control" placeholder="ماذا يدور في ذهنك يا نسر؟" required style="border-radius: 20px;">
             </div>
-            <div class="d-flex justify-content-between align-items-center mt-2 border-top pt-2">
+            <div class="d-flex justify-content-between align-items-center mt-2 border-top border-secondary pt-2">
                 <div class="d-flex gap-3">
-                    <label for="media" class="text-success mb-0" style="cursor: pointer;"><i class="fas fa-image fa-lg"></i></label>
+                    <label for="media" class="mb-0" style="cursor: pointer; color: var(--green-neon);"><i class="fas fa-image fa-lg"></i></label>
                     <input type="file" name="media" id="media" class="d-none" accept="image/*,video/*">
                 </div>
-                <button type="submit" class="btn btn-success rounded-pill px-4">نشر</button>
+                <button type="submit" class="btn" style="background: var(--green-neon); color: #020617; font-weight: bold; border-radius: 20px; box-shadow: 0 0 10px var(--green-neon);">نشر</button>
             </div>
         </form>
     </div>
 
     {% for post in posts %}
-    <div class="post-card">
+    <div class="glass-panel">
         <div class="d-flex justify-content-between">
             <div class="d-flex align-items-center gap-2 mb-2">
                 {% if post.author_pic != 'default.png' %}
-                <img src="{{ url_for('static', filename='uploads/' + post.author_pic) }}" class="profile-pic">
+                <img src="{{ url_for('static', filename='uploads/' + post.author_pic) }}" class="rounded-circle" style="width: 45px; height: 45px; object-fit:cover; border: 2px solid var(--green-neon);">
                 {% else %}
-                <div class="bg-secondary rounded-circle d-flex justify-content-center align-items-center" style="width: 45px; height: 45px; color: white; font-weight: bold;">{{ post.author[0] }}</div>
+                <div class="bg-secondary rounded-circle d-flex justify-content-center align-items-center" style="width: 45px; height: 45px; color: white; font-weight: bold; border: 2px solid var(--green-neon);">{{ post.author[0] }}</div>
                 {% endif %}
                 <div>
-                    <a href="/user/{{ post.author }}" class="text-decoration-none fw-bold" style="color: var(--green-dark);">{{ post.author }}</a>
+                    <a href="/user/{{ post.author }}" class="text-decoration-none fw-bold" style="color: var(--gold-neon);">{{ post.author }}</a>
                     <br><small class="text-muted">{{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
                 </div>
             </div>
             <i class="fas fa-ellipsis-h text-muted"></i>
         </div>
         
-        {% if post.content %}<p class="fs-6 mt-2">{{ post.content }}</p>{% endif %}
+        {% if post.content %}<p class="fs-6 mt-2 text-light">{{ post.content }}</p>{% endif %}
         {% if post.media %}
-            {% if post.media_type == 'image' %}<img src="{{ url_for('static', filename='uploads/' + post.media) }}" class="media-content">
-            {% elif post.media_type == 'video' %}<video controls class="media-content"><source src="{{ url_for('static', filename='uploads/' + post.media) }}"></video>{% endif %}
+            {% if post.media_type == 'image' %}<img src="{{ url_for('static', filename='uploads/' + post.media) }}" class="img-fluid rounded mt-2" style="max-height: 400px; object-fit: contain;">
+            {% elif post.media_type == 'video' %}<video controls class="img-fluid rounded mt-2" style="max-height: 400px;"><source src="{{ url_for('static', filename='uploads/' + post.media) }}"></video>{% endif %}
         {% endif %}
         
-        <div class="post-actions mt-3">
+        <div class="d-flex justify-content-between mt-3 pt-2 border-top border-secondary">
             <a href="/like/{{ post.id }}" class="post-action-btn {% if post.is_liked %}text-danger{% endif %}"><i class="fas fa-heart"></i> {{ post.likes_count }}</a>
             <span class="post-action-btn"><i class="fas fa-comment"></i> {{ post.comments|length }}</span>
             <span class="post-action-btn"><i class="fas fa-share"></i></span>
@@ -349,21 +386,21 @@ FEED_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 POLLS_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="container mt-3">
     {% if current_user.username == 'Aymn' %}
-    <div class="post-card mb-3">
-        <h5 style="color: var(--green-dark); font-weight: 800;">إنشاء تصويت جديد</h5>
+    <div class="glass-panel mb-3">
+        <h5 style="color: var(--gold-neon); font-weight: 800;">إنشاء تصويت جديد</h5>
         <form method="POST">
             <input type="text" name="question" class="form-control mb-2" placeholder="السؤال (مثلاً: أفضل لاعب اليوم؟)" required style="border-radius: 10px;">
             <div class="row">
                 <div class="col-6"><input type="text" name="option1" class="form-control mb-2" placeholder="الخيار الأول" required style="border-radius: 10px;"></div>
                 <div class="col-6"><input type="text" name="option2" class="form-control mb-2" placeholder="الخيار الثاني" required style="border-radius: 10px;"></div>
             </div>
-            <button type="submit" class="btn w-100" style="background:var(--green-dark); color:white; font-weight: bold;">إنشاء التصويت</button>
+            <button type="submit" class="btn w-100" style="background: var(--green-neon); color: #020617; font-weight: bold; box-shadow: 0 0 10px var(--green-neon);">إنشاء التصويت</button>
         </form>
     </div>
     {% endif %}
     {% for poll in polls %}
-    <div class="post-card mb-3">
-        <h5 class="fw-bold" style="color: var(--green-dark);">{{ poll.question }}</h5>
+    <div class="glass-panel mb-3">
+        <h5 class="fw-bold" style="color: var(--green-neon);">{{ poll.question }}</h5>
         <div class="row mt-3">
             <div class="col-6">
                 <form action="/vote/{{ poll.id }}/1" method="POST">
@@ -383,23 +420,23 @@ POLLS_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 
 PROFILE_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="container mt-4">
-    <div class="post-card text-center" style="border-radius: 20px;">
+    <div class="glass-panel text-center profile-card">
         {% if current_user.profile_pic != 'default.png' %}
-            <img src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}" class="rounded-circle mx-auto mb-3" style="width: 100px; height: 100px; object-fit:cover; border: 3px solid #e2e8f0;">
+            <img src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}" class="rounded-circle mx-auto mb-3" style="width: 100px; height: 100px; object-fit:cover; border: 3px solid var(--gold-neon); box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);">
         {% else %}
-            <div class="bg-secondary rounded-circle mx-auto mb-3 d-flex justify-content-center align-items-center" style="width: 100px; height: 100px; color: white; font-size: 2.5rem; font-weight: bold;">{{ current_user.username[0] }}</div>
+            <div class="bg-secondary rounded-circle mx-auto mb-3 d-flex justify-content-center align-items-center" style="width: 100px; height: 100px; color: white; font-size: 2.5rem; font-weight: bold; border: 3px solid var(--gold-neon);">{{ current_user.username[0] }}</div>
         {% endif %}
-        <h4 style="color: var(--green-dark); font-weight: 800;">{{ current_user.username }}</h4>
-        <p class="text-muted" style="font-size:0.9rem;">{{ current_user.bio if current_user.bio else 'وصف الموقع الرسمي.' }}</p>
+        <h4 style="color: var(--gold-neon); font-weight: 800; text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);">{{ current_user.username }}</h4>
+        <p class="text-light" style="font-size:0.9rem;">{{ current_user.bio if current_user.bio else 'وصف الموقع الرسمي.' }}</p>
         
         <form method="POST" enctype="multipart/form-data" class="mt-4 text-start">
-            <label class="form-label fw-bold">الوصف</label>
+            <label class="form-label fw-bold text-light">الوصف</label>
             <input type="text" name="bio" class="form-control mb-3" value="{{ current_user.bio }}" placeholder="اكتب وصفاً..." style="border-radius: 10px;">
             
-            <label class="form-label fw-bold">اختيار ملف</label>
+            <label class="form-label fw-bold text-light">اختيار ملف</label>
             <input type="file" name="profile_pic" class="form-control mb-3" accept="image/*" style="border-radius: 10px;">
             
-            <button type="submit" class="btn w-100" style="background: #10b981; color:white; font-weight: bold; border-radius: 10px;">حفظ التعديلات</button>
+            <button type="submit" class="btn w-100" style="background: var(--green-neon); color: #020617; font-weight: bold; border-radius: 10px; box-shadow: 0 0 15px var(--green-neon);">حفظ التعديلات</button>
         </form>
     </div>
 </div>
@@ -407,24 +444,24 @@ PROFILE_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 
 USER_PROFILE_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="container mt-4">
-    <div class="post-card text-center">
+    <div class="glass-panel text-center">
         {% if user.profile_pic != 'default.png' %}
-            <img src="{{ url_for('static', filename='uploads/' + user.profile_pic) }}" class="rounded-circle mx-auto mb-3" style="width: 120px; height: 120px; object-fit:cover; border: 4px solid var(--green-dark);">
+            <img src="{{ url_for('static', filename='uploads/' + user.profile_pic) }}" class="rounded-circle mx-auto mb-3" style="width: 120px; height: 120px; object-fit:cover; border: 4px solid var(--green-neon); box-shadow: 0 0 20px var(--green-neon);">
         {% else %}
-            <div class="bg-secondary rounded-circle mx-auto mb-3 d-flex justify-content-center align-items-center" style="width: 120px; height: 120px; color: white; font-size: 3rem; font-weight: bold;">{{ user.username[0] }}</div>
+            <div class="bg-secondary rounded-circle mx-auto mb-3 d-flex justify-content-center align-items-center" style="width: 120px; height: 120px; color: white; font-size: 3rem; font-weight: bold; border: 4px solid var(--green-neon);">{{ user.username[0] }}</div>
         {% endif %}
-        <h4 style="color: var(--green-dark); font-weight: 800;">{{ user.username }}</h4>
-        <p class="text-muted">{{ user.bio if user.bio else 'لا يوجد وصف.' }}</p>
-        <a href="/new_chat/{{ user.username }}" class="btn btn-success w-100" style="background:var(--green-dark); border-radius: 10px;"><i class="fas fa-comment"></i> مراسلة</a>
+        <h4 style="color: var(--gold-neon); font-weight: 800;">{{ user.username }}</h4>
+        <p class="text-light">{{ user.bio if user.bio else 'لا يوجد وصف.' }}</p>
+        <a href="/new_chat/{{ user.username }}" class="btn w-100" style="background: var(--green-neon); color: #020617; font-weight: bold; border-radius: 10px; box-shadow: 0 0 10px var(--green-neon);"><i class="fas fa-comment"></i> مراسلة</a>
     </div>
     
-    <h5 class="mt-4 mb-3" style="color: var(--green-dark); font-weight: 800;">منشورات {{ user.username }}</h5>
+    <h5 class="mt-4 mb-3" style="color: var(--green-neon); font-weight: 800;">منشورات {{ user.username }}</h5>
     {% for post in posts %}
-    <div class="post-card">
-        {% if post.content %}<p class="fs-6">{{ post.content }}</p>{% endif %}
+    <div class="glass-panel">
+        {% if post.content %}<p class="fs-6 text-light">{{ post.content }}</p>{% endif %}
         {% if post.media %}
-            {% if post.media_type == 'image' %}<img src="{{ url_for('static', filename='uploads/' + post.media) }}" class="media-content">
-            {% elif post.media_type == 'video' %}<video controls class="media-content"><source src="{{ url_for('static', filename='uploads/' + post.media) }}"></video>{% endif %}
+            {% if post.media_type == 'image' %}<img src="{{ url_for('static', filename='uploads/' + post.media) }}" class="img-fluid rounded mt-2" style="max-height: 400px; object-fit: contain;">
+            {% elif post.media_type == 'video' %}<video controls class="img-fluid rounded mt-2" style="max-height: 400px;"><source src="{{ url_for('static', filename='uploads/' + post.media) }}"></video>{% endif %}
         {% endif %}
         <small class="text-muted">{{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
     </div>
@@ -436,20 +473,20 @@ USER_PROFILE_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 
 MESSAGES_LIST_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="container mt-3">
-    <div class="post-card" style="border-radius: 20px;">
-        <h5 class="mb-3 fw-bold" style="color: var(--green-dark);">المحادثات</h5>
+    <div class="glass-panel">
+        <h5 class="mb-3 fw-bold" style="color: var(--green-neon); text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);">المحادثات</h5>
         <form method="POST" action="/new_chat" class="d-flex gap-2 mb-4">
-            <input type="text" name="receiver" class="form-control" placeholder="ابحث عن اسم المستخدم..." required style="border-radius: 20px; background: #f1f5f9;">
-            <button type="submit" class="btn btn-success rounded-circle" style="background:var(--green-dark); width: 45px; height: 45px;"><i class="fas fa-search"></i></button>
+            <input type="text" name="receiver" class="form-control" placeholder="ابحث عن اسم المستخدم..." required style="border-radius: 20px;">
+            <button type="submit" class="btn" style="background: var(--green-neon); color: #020617; border-radius: 20px; box-shadow: 0 0 10px var(--green-neon);"><i class="fas fa-search"></i></button>
         </form>
         {% for chat in chats %}
-        <a href="/chat/{{ chat.username }}" class="d-flex align-items-center p-3 mb-2 text-decoration-none text-dark" style="background: #f8fafc; border-radius: 15px;">
+        <a href="/chat/{{ chat.username }}" class="d-flex align-items-center p-3 mb-2 text-decoration-none text-light" style="background: rgba(255,255,255,0.05); border-radius: 15px; border: 1px solid rgba(16, 185, 129, 0.3);">
             <div class="bg-secondary rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 50px; height: 50px; color: white; font-weight: bold; font-size: 1.2rem;">{{ chat.username[0] }}</div>
             <div class="flex-grow-1">
-                <h6 class="mb-0 fw-bold" style="color: var(--green-dark);">{{ chat.username }}</h6>
+                <h6 class="mb-0 fw-bold" style="color: var(--green-neon);">{{ chat.username }}</h6>
                 <small class="text-muted">اضغط للمحادثة</small>
             </div>
-            {% if chat.unread > 0 %}<span class="badge bg-danger rounded-pill">{{ chat.unread }}</span>{% endif %}
+            {% if chat.unread > 0 %}<span class="badge bg-danger rounded-pill" style="box-shadow: 0 0 10px #ef4444;">{{ chat.unread }}</span>{% endif %}
         </a>
         {% else %}
         <p class="text-muted text-center mt-3">لا توجد محادثات بعد.</p>
@@ -469,21 +506,23 @@ CHAT_HTML = """
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Tajawal', sans-serif; background-color: #efeae2; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; }
-        .chat-header { background: #064e3b; color: white; padding: 10px 15px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; }
-        .chat-header a { color: white; text-decoration: none; }
-        .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
-        .msg-bubble { max-width: 80%; padding: 10px 14px; border-radius: 12px; margin-bottom: 10px; font-size: 0.95rem; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .msg-sent { background: #d9fdd3; align-self: flex-end; border-top-right-radius: 2px; }
-        .msg-received { background: #ffffff; align-self: flex-start; border-top-left-radius: 2px; }
-        .chat-input { background: #f0f2f5; padding: 10px 15px; display: flex; gap: 10px; align-items: center; }
+        body { font-family: 'Tajawal', sans-serif; background-color: #020617; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; }
+        .chat-header { background: rgba(16, 185, 129, 0.1); backdrop-filter: blur(10px); color: white; padding: 10px 15px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--green-neon); }
+        .chat-header a { color: var(--green-neon); text-decoration: none; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; background: #020617; }
+        .msg-bubble { max-width: 80%; padding: 10px 14px; border-radius: 12px; margin-bottom: 10px; font-size: 0.95rem; position: relative; }
+        .msg-sent { background: rgba(16, 185, 129, 0.2); border: 1px solid var(--green-neon); color: white; align-self: flex-end; border-top-right-radius: 2px; }
+        .msg-received { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.1); color: white; align-self: flex-start; border-top-left-radius: 2px; }
+        .chat-input { background: rgba(2, 6, 23, 0.9); padding: 10px 15px; display: flex; gap: 10px; align-items: center; border-top: 1px solid rgba(16, 185, 129, 0.3); }
         .media-chat { max-width: 100%; border-radius: 8px; margin-top: 5px; }
+        .form-control { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; }
+        .form-control::placeholder { color: #94a3b8; }
     </style>
 </head>
 <body>
     <div class="chat-header">
         <a href="/messages"><i class="fas fa-arrow-right fa-lg"></i></a>
-        <div class="bg-light rounded-circle d-flex justify-content-center align-items-center" style="width: 40px; height: 40px; color: #064e3b; font-weight: bold;">{{ other_user[0] }}</div>
+        <div class="bg-secondary rounded-circle d-flex justify-content-center align-items-center" style="width: 40px; height: 40px; color: white; font-weight: bold; border: 1px solid var(--green-neon);">{{ other_user[0] }}</div>
         <strong class="fs-5">{{ other_user }}</strong>
     </div>
     <div class="chat-messages">
@@ -508,10 +547,10 @@ CHAT_HTML = """
         {% endfor %}
     </div>
     <form action="/chat/{{ other_user }}" method="POST" enctype="multipart/form-data" class="chat-input">
-        <label for="chat-media" class="btn btn-light text-success mb-0"><i class="fas fa-camera fa-lg"></i></label>
+        <label for="chat-media" class="mb-0" style="color: var(--green-neon); cursor: pointer;"><i class="fas fa-camera fa-lg"></i></label>
         <input type="file" name="media" id="chat-media" class="d-none" accept="image/*,video/*">
         <input type="text" name="content" class="form-control rounded-pill" placeholder="اكتب رسالة..." autocomplete="off" style="border-radius: 25px;">
-        <button type="submit" class="btn btn-success rounded-circle" style="background:#064e3b; width: 45px; height: 45px;"><i class="fas fa-paper-plane"></i></button>
+        <button type="submit" class="btn rounded-circle" style="background: var(--green-neon); color: #020617; width: 45px; height: 45px; box-shadow: 0 0 10px var(--green-neon);"><i class="fas fa-paper-plane"></i></button>
     </form>
 </body>
 </html>
