@@ -95,17 +95,21 @@ with app.app_context():
         db.session.commit()
 
 LINEUPS = [
-    {"name": "منذر", "number": 9, "top": "15%", "left": "50%"},
-    {"name": "مصعب", "number": 13, "top": "22%", "left": "25%"},
-    {"name": "أيمن", "number": 18, "top": "22%", "left": "75%"},
-    {"name": "البخاري", "number": 20, "top": "38%", "left": "50%"},
-    {"name": "محمد بلال", "number": 24, "top": "48%", "left": "28%"},
-    {"name": "عباس", "number": 8, "top": "48%", "left": "72%"},
-    {"name": "محمد", "number": 1, "top": "58%", "left": "15%"},
-    {"name": "عبدالرحمن", "number": 14, "top": "58%", "left": "50%"},
-    {"name": "النذير", "number": 20, "top": "75%", "left": "50%"},
-    {"name": "أحمد", "number": 13, "top": "68%", "left": "75%"},
-    {"name": "محمد", "number": 1, "top": "68%", "left": "25%"},
+    # الهجوم
+    {"name": "منذر", "position": "جناح يسار", "number": 9, "top": "20%", "left": "25%"},
+    {"name": "مصعب", "position": "رأس حربة", "number": 9, "top": "15%", "left": "50%"},
+    {"name": "أيمن", "position": "جناح يمين", "number": 7, "top": "20%", "left": "75%"},
+    # الوسط
+    {"name": "محمد بلال", "position": "وسط يسار", "number": 8, "top": "45%", "left": "25%"},
+    {"name": "عباس", "position": "وسط مركزي", "number": 10, "top": "45%", "left": "50%"},
+    {"name": "البخاري", "position": "وسط يمين", "number": 6, "top": "45%", "left": "75%"},
+    # الدفاع
+    {"name": "عبدالرحمن", "position": "ظهير أيسر", "number": 3, "top": "70%", "left": "15%"},
+    {"name": "محمد", "position": "قلب دفاع", "number": 4, "top": "75%", "left": "38%"},
+    {"name": "أحمد", "position": "قلب دفاع", "number": 5, "top": "75%", "left": "62%"},
+    {"name": "محمد", "position": "ظهير أيمن", "number": 2, "top": "70%", "left": "85%"},
+    # حراسة المرمى
+    {"name": "النذير", "position": "الحارس", "number": 1, "top": "90%", "left": "50%"},
 ]
 
 # ==========================================
@@ -224,15 +228,19 @@ REGISTER_PAGE = BASE_HTML.replace('{% block content %}{% endblock %}', """
 
 PLAYERS_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="container mt-3">
-    <h4 class="text-center mb-3" style="color: var(--gold-neon);">⭐⭐⭐⭐⭐ التشكيلة الأساسية</h4>
-    <div class="pitch-container">
-        <div class="pitch-lines"></div>
-        {% for player in lineups %}
-        <div class="player-node" style="top: {{ player.top }}; left: {{ player.left }};">
-            <div class="player-circle">{{ player.number }}</div>
-            <div class="player-name">{{ player.name }}</div>
+    <h4 class="text-center mb-3" style="color: var(--gold-neon); font-weight: 900; text-shadow: 0 0 15px rgba(251, 191, 36, 0.6);">تشكيلة فريق كرة قدم 4-3-3</h4>
+    <div class="pitch-wrapper">
+        <div class="pitch-container">
+            <div class="penalty-box-top"></div>
+            <div class="penalty-box-bottom"></div>
+            {% for player in lineups %}
+            <div class="player-node" style="top: {{ player.top }}; left: {{ player.left }};">
+                <div class="player-icon"><i class="fas fa-tshirt"></i></div>
+                <div class="player-name">{{ player.name }}</div>
+                <div class="player-pos">({{ player.position }})</div>
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
     </div>
 </div>
 """)
