@@ -94,21 +94,6 @@ with app.app_context():
         db.session.add(admin)
         db.session.commit()
 
-# التشكيلة (سيتم عرضها عبر Grid)
-LINEUPS = [
-    {"name": "منذر", "position": "جناح أيسر", "number": 9},
-    {"name": "مصعب", "position": "رأس حربة", "number": 10},
-    {"name": "أيمن", "position": "جناح أيمن", "number": 7},
-    {"name": "محمد بلال", "position": "وسط أيسر", "number": 8},
-    {"name": "عباس", "position": "وسط مركزي", "number": 6},
-    {"name": "البخاري", "position": "وسط أيمن", "number": 14},
-    {"name": "عبدالرحمن", "position": "ظهير أيسر", "number": 3},
-    {"name": "محمد", "position": "قلب دفاع", "number": 4},
-    {"name": "أحمد", "position": "قلب دفاع", "number": 5},
-    {"name": "محمد", "position": "ظهير أيمن", "number": 2},
-    {"name": "النذير", "position": "الحارس", "number": 1},
-]
-
 # ==========================================
 # القوالب (HTML)
 # ==========================================
@@ -118,7 +103,6 @@ BASE_HTML = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#1e5631">
     <title>نسور حجرودسالم</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -135,32 +119,13 @@ BASE_HTML = """
         .bottom-nav i { font-size: 1.4rem; margin-bottom: 4px; }
         .badge-notify { background-color: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.65rem; position: absolute; top: -6px; left: -8px; box-shadow: 0 0 10px #ef4444; }
         
-        /* الملعب الجديد (CSS Grid) */
-        .pitch-wrapper { padding: 10px; margin: 0; width: 100%; }
-        .pitch-grid { 
-            display: grid; 
-            grid-template-rows: repeat(4, 1fr); /* 4 صفوف: هجوم، وسط، دفاع، حراسة */
-            width: 100%; 
-            height: 65vh; 
-            background: repeating-linear-gradient(0deg, #2e7d32, #2e7d32 40px, #1b5e20 40px, #1b5e20 80px); 
-            border: 3px solid white; 
-            border-radius: 10px;
-            position: relative;
-            overflow: hidden;
-        }
-        /* خطوط الملعب */
-        .pitch-grid::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.4); }
-        .pitch-grid::after { content: ''; position: absolute; top: 50%; left: 50%; width: 80px; height: 80px; border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; transform: translate(-50%, -50%); }
-
-        .row-attack { display: flex; justify-content: space-around; align-items: center; padding: 0 10px; }
-        .row-mid { display: flex; justify-content: space-around; align-items: center; padding: 0 20px; }
-        .row-def { display: flex; justify-content: space-around; align-items: center; padding: 0 10px; }
-        .row-gk { display: flex; justify-content: center; align-items: center; }
-
-        .player-card { text-align: center; display: flex; flex-direction: column; align-items: center; }
-        .player-icon { background: #1e3a8a; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; border: 2px solid white; margin-bottom: 2px; box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
-        .player-name { background: rgba(0,0,0,0.8); color: white; font-weight: 800; font-size: 0.7rem; padding: 2px 4px; border-radius: 3px; white-space: nowrap; }
-        .player-pos { color: #fbbf24; font-weight: 700; font-size: 0.6rem; text-shadow: 1px 1px 1px black; }
+        .pitch-container { position: relative; width: 100%; max-width: 600px; margin: 20px auto; aspect-ratio: 16 / 10; background: rgba(16,185,129,0.1); border: 2px solid var(--green-neon); box-shadow: 0 0 20px rgba(16,185,129,0.3); border-radius: 10px; overflow: hidden; }
+        .pitch-lines { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border: 2px solid rgba(16,185,129,0.5); margin: 10px; border-radius: 5px; }
+        .pitch-lines::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: rgba(16,185,129,0.5); }
+        .pitch-lines::after { content: ''; position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; border: 2px solid rgba(16,185,129,0.5); border-radius: 50%; transform: translate(-50%,-50%); }
+        .player-node { position: absolute; transform: translate(-50%, -50%); text-align: center; display: flex; flex-direction: column; align-items: center; width: 80px; }
+        .player-circle { background: rgba(2,6,23,0.9); color: var(--green-neon); width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; border: 2px solid var(--green-neon); box-shadow: 0 0 10px var(--green-neon); margin-bottom: 3px; }
+        .player-name { background: rgba(16,185,129,0.8); color: white; font-weight: 700; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; white-space: nowrap; box-shadow: 0 0 5px var(--green-neon); }
 
         .form-control { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; }
         .form-control:focus { background: rgba(255,255,255,0.1); border-color: var(--green-neon); box-shadow: 0 0 10px rgba(16,185,129,0.3); color: white; }
@@ -209,7 +174,6 @@ BASE_HTML = """
 </html>
 """
 
-# --- باقي الصفحات ---
 INDEX_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="glass-panel text-center mt-5">
     <i class="fas fa-dove fa-4x" style="color: var(--gold-neon); margin-bottom: 20px;"></i>
@@ -218,34 +182,42 @@ INDEX_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 </div>
 """)
 
-# صفحة التشكيلة الجديدة باستخدام Grid
+LOGIN_PAGE = BASE_HTML.replace('{% block content %}{% endblock %}', """
+<div class="glass-panel" style="max-width: 400px; margin: 50px auto;">
+    <h3 class="text-center mb-4" style="color: var(--green-neon);">تسجيل الدخول</h3>
+    <form method="POST">
+        <div class="mb-3"><label class="form-label text-light">اسم المستخدم</label><input type="text" name="username" class="form-control" required></div>
+        <div class="mb-3"><label class="form-label text-light">كلمة المرور</label><input type="password" name="password" class="form-control" required></div>
+        <button type="submit" class="btn btn-neon w-100">دخول</button>
+    </form>
+    <p class="text-center mt-3"><a href="/register" class="text-decoration-none" style="color: var(--gold-neon);">ليس لديك حساب؟ سجل الآن</a></p>
+</div>
+""")
+
+REGISTER_PAGE = BASE_HTML.replace('{% block content %}{% endblock %}', """
+<div class="glass-panel" style="max-width: 400px; margin: 50px auto;">
+    <h3 class="text-center mb-4" style="color: var(--green-neon);">إنشاء حساب جديد</h3>
+    <form method="POST" enctype="multipart/form-data">
+        <div class="mb-3"><label class="form-label text-light">اسم المستخدم</label><input type="text" name="username" class="form-control" required></div>
+        <div class="mb-3"><label class="form-label text-light">كلمة المرور</label><input type="password" name="password" class="form-control" required></div>
+        <div class="mb-3"><label class="form-label text-light">صورة الحساب (اختياري)</label><input type="file" name="profile_pic" class="form-control" accept="image/*"></div>
+        <button type="submit" class="btn btn-neon w-100">تسجيل</button>
+    </form>
+    <p class="text-center mt-3"><a href="/login" class="text-decoration-none" style="color: var(--gold-neon);">لديك حساب؟ سجل دخولك</a></p>
+</div>
+""")
+
 PLAYERS_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
-<div class="pitch-wrapper">
-    <h4 class="text-center mb-2" style="color: var(--gold-neon); font-weight: 900; text-shadow: 0 0 15px rgba(251,191,36,0.6);">تشكيلة فريق كرة قدم 4-3-3</h4>
-    <div class="pitch-grid">
-        <!-- الصف الأول: الهجوم -->
-        <div class="row-attack">
-            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">منذر</div><div class="player-pos">(جناح أيسر)</div></div>
-            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">مصعب</div><div class="player-pos">(رأس حربة)</div></div>
-            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">أيمن</div><div class="player-pos">(جناح أيمن)</div></div>
+<div class="container mt-3">
+    <h4 class="text-center mb-3" style="color: var(--gold-neon);">⭐⭐⭐⭐⭐ التشكيلة الأساسية</h4>
+    <div class="pitch-container">
+        <div class="pitch-lines"></div>
+        {% for player in lineups %}
+        <div class="player-node" style="top: {{ player.top }}; left: {{ player.left }};">
+            <div class="player-circle">{{ player.number }}</div>
+            <div class="player-name">{{ player.name }}</div>
         </div>
-        <!-- الصف الثاني: الوسط -->
-        <div class="row-mid">
-            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">محمد بلال</div><div class="player-pos">(وسط أيسر)</div></div>
-            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">عباس</div><div class="player-pos">(وسط مركزي)</div></div>
-            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">البخاري</div><div class="player-pos">(وسط أيمن)</div></div>
-        </div>
-        <!-- الصف الثالث: الدفاع -->
-        <div class="row-def">
-            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">عبدالرحمن</div><div class="player-pos">(ظهير أيسر)</div></div>
-            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">محمد</div><div class="player-pos">(قلب دفاع)</div></div>
-            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">أحمد</div><div class="player-pos">(قلب دفاع)</div></div>
-            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">محمد</div><div class="player-pos">(ظهير أيمن)</div></div>
-        </div>
-        <!-- الصف الرابع: حراسة المرمى -->
-        <div class="row-gk">
-            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">النذير</div><div class="player-pos">(الحارس)</div></div>
-        </div>
+        {% endfor %}
     </div>
 </div>
 """)
@@ -411,7 +383,6 @@ CHAT_HTML = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#1e5631">
     <title>محادثة مع {{ other_user }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -491,13 +462,17 @@ def inject_unread_count():
         return dict(unread_count=count)
     return dict(unread_count=0)
 
+@app.route('/manifest.json')
+def manifest():
+    return send_from_directory('static', 'manifest.json')
+
 @app.route('/')
 @login_required
 def home(): return render_template_string(INDEX_HTML)
 
 @app.route('/players')
 @login_required
-def players(): return render_template_string(PLAYERS_HTML)
+def players(): return render_template_string(PLAYERS_HTML, lineups=LINEUPS)
 
 @app.route('/matches')
 @login_required
@@ -673,11 +648,6 @@ def chat(other_user):
         and_(Message.sender == other_user, Message.receiver == current_user.username)
     )).order_by(Message.timestamp.asc()).all()
     return render_template_string(CHAT_HTML, other_user=other_user, msgs=msgs)
-
-
-@app.route('/manifest.json')
-def manifest():
-    return send_from_directory('static', 'manifest.json')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
