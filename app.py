@@ -1,10 +1,10 @@
-from flask import Flask, render_template_string, request, redirect, url_for, flash
+from flask import Flask, render_template_string, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-import os
-import uuid
+from sqlalchemy import func
+import os, uuid, datetime
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'super-secret-key-for-club'
@@ -12,7 +12,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///club.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
-
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 db = SQLAlchemy(app)
@@ -36,6 +35,18 @@ class Post(db.Model):
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
 
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, nullable=False)
+    author = db.Column(db.String(100), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+class PostLike(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, nullable=False)
+    username = db.Column(db.String(100), nullable=False)
+
 class Poll(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     question = db.Column(db.String(255), nullable=False)
@@ -44,11 +55,18 @@ class Poll(db.Model):
     votes1 = db.Column(db.Integer, default=0)
     votes2 = db.Column(db.Integer, default=0)
 
+class PollVote(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    poll_id = db.Column(db.Integer, nullable=False)
+    username = db.Column(db.String(100), nullable=False)
+
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sender = db.Column(db.String(100), nullable=False)
     receiver = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
+    is_read = db.Column(db.Boolean, default=False)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -57,49 +75,39 @@ def load_user(user_id):
 with app.app_context():
     db.create_all()
     try:
+        # الترقيع لضمان وجود الأعمدة الجديدة
         db.session.execute('ALTER TABLE user ADD COLUMN bio VARCHAR(255) DEFAULT ""')
         db.session.execute('ALTER TABLE user ADD COLUMN profile_pic VARCHAR(255) DEFAULT "default.png"')
+        db.session.execute('ALTER TABLE message ADD COLUMN is_read BOOLEAN DEFAULT 0')
         db.session.commit()
     except Exception:
         db.session.rollback()
         
-    # إنشاء حساب الأدمن الخاص بك إذا لم يكن موجوداً
     admin_user = User.query.filter_by(username='Aymn').first()
     if not admin_user:
         admin = User(username='Aymn', password_hash=generate_password_hash('9910'))
         db.session.add(admin)
         db.session.commit()
-    else:
-        # إذا كان الحساب موجوداً، نضمن أن كلمة المرور هي 9910 (اختياري)
-        admin_user.password_hash = generate_password_hash('9910')
-        db.session.commit()
 
 # ==========================================
-# التشكيلة 4-3-3 (مطابقة للصورة)
+# التشكيلة 4-3-3
 # ==========================================
 LINEUPS = [
-    # الهجوم (3 مهاجمين)
-    {"name": "مندر", "number": 9, "top": "15%", "left": "25%"},   # جناح يسار
-    {"name": "مصعب", "number": 9, "top": "12%", "left": "50%"},   # رأس حربة
-    {"name": "أيمن", "number": 7, "top": "15%", "left": "75%"},   # جناح يمين
-    
-    # الوسط (3 لاعبين)
-    {"name": "محمد بلال", "number": 8, "top": "40%", "left": "25%"}, # وسط يسار
-    {"name": "عباس", "number": 10, "top": "42%", "left": "50%"},     # وسط مركزي
-    {"name": "البخاري", "number": 6, "top": "40%", "left": "75%"},   # وسط يمين
-    
-    # الدفاع (4 مدافعين)
-    {"name": "عبدالرحمن", "number": 3, "top": "65%", "left": "15%"}, # ظهير أيسر
-    {"name": "محمد", "number": 4, "top": "70%", "left": "38%"},      # قلب دفاع
-    {"name": "أحمد", "number": 5, "top": "70%", "left": "62%"},      # قلب دفاع
-    {"name": "محمد", "number": 2, "top": "65%", "left": "85%"},      # ظهير أيمن
-    
-    # حراسة المرمى
+    {"name": "مندر", "number": 9, "top": "15%", "left": "25%"},
+    {"name": "مصعب", "number": 9, "top": "12%", "left": "50%"},
+    {"name": "أيمن", "number": 7, "top": "15%", "left": "75%"},
+    {"name": "محمد بلال", "number": 8, "top": "40%", "left": "25%"},
+    {"name": "عباس", "number": 10, "top": "42%", "left": "50%"},
+    {"name": "البخاري", "number": 6, "top": "40%", "left": "75%"},
+    {"name": "عبدالرحمن", "number": 3, "top": "65%", "left": "15%"},
+    {"name": "محمد", "number": 4, "top": "70%", "left": "38%"},
+    {"name": "أحمد", "number": 5, "top": "70%", "left": "62%"},
+    {"name": "محمد", "number": 2, "top": "65%", "left": "85%"},
     {"name": "النذير", "number": 1, "top": "90%", "left": "50%"},
 ]
 
 # ==========================================
-# القوالب (HTML)
+# القوالب (HTML) - تصميم عصري مع أيقونات
 # ==========================================
 BASE_HTML = """
 <!DOCTYPE html>
@@ -109,13 +117,14 @@ BASE_HTML = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>نادي نسور حجرودسالم</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root { --primary-color: #1e5631; --secondary-color: #d4af37; --bg-light: #f8f9fa; }
         body { font-family: 'Tajawal', sans-serif; background-color: var(--bg-light); }
         .navbar { background-color: var(--primary-color); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .navbar-brand { color: var(--secondary-color) !important; font-weight: 900; }
-        .nav-link { color: #fff !important; font-weight: 700; }
+        .nav-link { color: #fff !important; font-weight: 700; display: flex; align-items: center; gap: 5px; }
         .nav-link:hover { color: var(--secondary-color) !important; }
         .hero-section { background: linear-gradient(rgba(30, 86, 49, 0.8), rgba(30, 86, 49, 0.8)), url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=2070&auto=format&fit=crop') no-repeat center center/cover; color: white; padding: 80px 0; text-align: center; border-bottom: 5px solid var(--secondary-color); }
         .hero-title { font-size: 3rem; font-weight: 900; }
@@ -127,25 +136,17 @@ BASE_HTML = """
         .post-card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .profile-pic { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--secondary-color); }
         .poll-btn { width: 100%; margin-bottom: 10px; text-align: right; font-weight: bold; }
+        
+        /* إشعار الرسائل */
+        .badge-notify { background-color: #dc3545; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; position: absolute; top: -5px; left: -5px; }
+        .nav-item-relative { position: relative; }
 
-        /* ===== تصميم الملعب ===== */
-        .pitch-container {
-            position: relative;
-            width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-            aspect-ratio: 2 / 3;
-            background: repeating-linear-gradient(0deg, #4caf50, #4caf50 50px, #388e3c 50px, #388e3c 100px);
-            border: 3px solid white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
+        /* الملعب */
+        .pitch-container { position: relative; width: 100%; max-width: 600px; margin: 0 auto; aspect-ratio: 2 / 3; background: repeating-linear-gradient(0deg, #4caf50, #4caf50 50px, #388e3c 50px, #388e3c 100px); border: 3px solid white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; }
         .pitch-container::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.5); }
         .pitch-container::after { content: ''; position: absolute; top: 50%; left: 50%; width: 80px; height: 80px; border: 2px solid rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); }
         .penalty-box-top { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 250px; height: 100px; border: 2px solid rgba(255,255,255,0.5); border-top: none; }
         .penalty-box-bottom { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 250px; height: 100px; border: 2px solid rgba(255,255,255,0.5); border-bottom: none; }
-        
         .player-node { position: absolute; transform: translate(-50%, -50%); text-align: center; display: flex; flex-direction: column; align-items: center; width: 80px; }
         .player-circle { background: var(--primary-color); color: var(--secondary-color); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; border: 2px solid var(--secondary-color); box-shadow: 0 4px 8px rgba(0,0,0,0.4); margin-bottom: 5px; }
         .player-name { background: rgba(0,0,0,0.7); color: white; font-weight: 700; font-size: 0.8rem; padding: 2px 6px; border-radius: 5px; white-space: nowrap; }
@@ -159,16 +160,21 @@ BASE_HTML = """
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     {% if current_user.is_authenticated %}
-                        <li class="nav-item"><a class="nav-link" href="/">الرئيسية</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/players">التشكيلة</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/matches">المباريات</a></li>
-                        <li class="nav-item"><a class="nav-link text-warning" href="/feed">المنشورات</a></li>
-                        <li class="nav-item"><a class="nav-link text-warning" href="/polls">التصويت</a></li>
-                        <li class="nav-item"><a class="nav-link text-warning" href="/messages">الرسائل</a></li>
-                        <li class="nav-item"><a class="nav-link text-info" href="/profile">حسابي</a></li>
-                        <li class="nav-item"><a class="nav-link text-danger" href="/logout">خروج</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/"><i class="fas fa-home"></i> الرئيسية</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/players"><i class="fas fa-users"></i> التشكيلة</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/matches"><i class="fas fa-calendar-alt"></i> المباريات</a></li>
+                        <li class="nav-item"><a class="nav-link text-warning" href="/feed"><i class="fas fa-newspaper"></i> المنشورات</a></li>
+                        <li class="nav-item"><a class="nav-link text-warning" href="/polls"><i class="fas fa-poll"></i> التصويت</a></li>
+                        <li class="nav-item nav-item-relative">
+                            <a class="nav-link text-warning" href="/messages">
+                                <i class="fas fa-envelope"></i> الرسائل
+                                {% if unread_count > 0 %}<span class="badge-notify">{{ unread_count }}</span>{% endif %}
+                            </a>
+                        </li>
+                        <li class="nav-item"><a class="nav-link text-info" href="/profile"><i class="fas fa-user"></i> حسابي</a></li>
+                        <li class="nav-item"><a class="nav-link text-danger" href="/logout"><i class="fas fa-sign-out-alt"></i> خروج</a></li>
                     {% else %}
-                        <li class="nav-item"><a class="nav-link text-warning" href="/login">تسجيل الدخول</a></li>
+                        <li class="nav-item"><a class="nav-link text-warning" href="/login"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</a></li>
                     {% endif %}
                 </ul>
             </div>
@@ -266,20 +272,17 @@ MATCHES_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 </div>
 """)
 
-# ===== صفحة المنشورات (تظهر للجميع لكن النشر للأدمن فقط) =====
 FEED_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            {% if current_user.username == 'Aymn' %}
             <div class="post-card mb-4">
-                <h4 style="color: var(--primary-color);">شاركنا رأيك (أنت الأدمن)</h4>
+                <h4 style="color: var(--primary-color);">شاركنا رأيك</h4>
                 <form method="POST">
                     <textarea name="content" class="form-control mb-2" rows="3" placeholder="ماذا يدور في ذهنك يا نسر؟" required></textarea>
                     <button type="submit" class="btn btn-gold w-100">نشر</button>
                 </form>
             </div>
-            {% endif %}
             <h3 class="mb-3" style="color: var(--primary-color);">📰 آخر المنشورات</h3>
             {% for post in posts %}
             <div class="post-card">
@@ -289,16 +292,35 @@ FEED_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
                 </div>
                 <p class="fs-5">{{ post.content }}</p>
                 <small class="text-muted">{{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                
+                <hr>
+                <!-- أزرار الإعجاب والتعليق -->
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <a href="/like/{{ post.id }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-thumbs-up"></i> إعجاب ({{ post.likes_count }})</a>
+                    </div>
+                    <span class="text-muted"><i class="fas fa-comment"></i> تعليقات ({{ post.comments|length }})</span>
+                </div>
+                
+                <!-- التعليقات -->
+                <div class="bg-light p-2 rounded">
+                    {% for comment in post.comments %}
+                    <div class="mb-1"><strong>{{ comment.author }}:</strong> {{ comment.content }}</div>
+                    {% endfor %}
+                    <form action="/comment/{{ post.id }}" method="POST" class="mt-2 d-flex">
+                        <input type="text" name="comment" class="form-control form-control-sm me-2" placeholder="اكتب تعليقاً..." required>
+                        <button type="submit" class="btn btn-sm btn-gold">رد</button>
+                    </form>
+                </div>
             </div>
             {% else %}
-            <p class="text-center text-muted">لا توجد منشورات بعد.</p>
+            <p class="text-center text-muted">لا توجد منشورات بعد. كن أول من ينشر!</p>
             {% endfor %}
         </div>
     </div>
 </div>
 """)
 
-# ===== صفحة التصويت (إنشاء للأدمن فقط، تصويت للجميع) =====
 POLLS_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -372,15 +394,23 @@ PROFILE_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 </div>
 """)
 
+# ===== صفحة الرسائل (مثل واتساب) =====
 MESSAGES_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="container mt-5">
-    <h2 style="color: var(--primary-color);">📬 صندوق الرسائل</h2>
+    <h2 style="color: var(--primary-color);">📬 الرسائل</h2>
     <div class="row">
         <div class="col-md-4">
-            <div class="card card-custom p-3">
-                <h5>إرسال رسالة</h5>
+            <div class="card card-custom p-3 mb-3">
+                <h5>إرسال رسالة جديدة</h5>
                 <form method="POST" action="/send_message">
-                    <div class="mb-2"><input type="text" name="receiver" class="form-control" placeholder="إلى (اسم المستخدم)" required></div>
+                    <div class="mb-2">
+                        <input type="text" name="receiver" list="users_list" class="form-control" placeholder="ابحث عن اسم المستخدم..." required>
+                        <datalist id="users_list">
+                            {% for u in all_users %}
+                            <option value="{{ u.username }}">
+                            {% endfor %}
+                        </datalist>
+                    </div>
                     <div class="mb-2"><textarea name="content" class="form-control" placeholder="نص الرسالة..." rows="3" required></textarea></div>
                     <button type="submit" class="btn btn-gold w-100">إرسال</button>
                 </form>
@@ -388,9 +418,11 @@ MESSAGES_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
         </div>
         <div class="col-md-8">
             <div class="card card-custom p-3">
-                <h5>الرسائل الواردة</h5>
+                <h5>صندوق الوارد</h5>
                 {% for msg in messages %}
-                    <div class="alert alert-info"><strong>{{ msg.sender }}:</strong> {{ msg.content }}</div>
+                    <div class="alert {{ 'alert-info' if not msg.is_read else 'alert-light' }}">
+                        <strong>{{ msg.sender }}:</strong> {{ msg.content }}
+                    </div>
                 {% else %}
                     <p class="text-muted">لا توجد رسائل بعد.</p>
                 {% endfor %}
@@ -403,6 +435,14 @@ MESSAGES_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 # ==========================================
 # المسارات
 # ==========================================
+# إضافة متغير unread_count لكل الصفحات
+@app.context_processor
+def inject_unread_count():
+    if current_user.is_authenticated:
+        count = Message.query.filter_by(receiver=current_user.username, is_read=False).count()
+        return dict(unread_count=count)
+    return dict(unread_count=0)
+
 @app.route('/')
 @login_required
 def home(): return render_template_string(INDEX_HTML)
@@ -419,16 +459,42 @@ def matches(): return render_template_string(MATCHES_HTML)
 @login_required
 def feed():
     if request.method == 'POST':
-        if current_user.username != 'Aymn':
-            flash('عذراً، النشر متاح للأدمن فقط.', 'danger')
-            return redirect(url_for('feed'))
         new_post = Post(author=current_user.username, content=request.form['content'])
         db.session.add(new_post)
         db.session.commit()
         flash('تم نشر المنشور!', 'success')
         return redirect(url_for('feed'))
+    
     posts = Post.query.order_by(Post.timestamp.desc()).all()
+    
+    # إضافة عدد الإعجابات والتعليقات لكل منشور
+    for post in posts:
+        post.likes_count = PostLike.query.filter_by(post_id=post.id).count()
+        post.comments = Comment.query.filter_by(post_id=post.id).all()
+        
     return render_template_string(FEED_HTML, posts=posts)
+
+@app.route('/like/<int:post_id>')
+@login_required
+def like_post(post_id):
+    existing_like = PostLike.query.filter_by(post_id=post_id, username=current_user.username).first()
+    if not existing_like:
+        new_like = PostLike(post_id=post_id, username=current_user.username)
+        db.session.add(new_like)
+        db.session.commit()
+        flash('تم الإعجاب!', 'success')
+    else:
+        flash('لقد أعجبت بهذا المنشور مسبقاً.', 'info')
+    return redirect(url_for('feed'))
+
+@app.route('/comment/<int:post_id>', methods=['POST'])
+@login_required
+def add_comment(post_id):
+    content = request.form['comment']
+    new_comment = Comment(post_id=post_id, author=current_user.username, content=content)
+    db.session.add(new_comment)
+    db.session.commit()
+    return redirect(url_for('feed'))
 
 @app.route('/polls', methods=['GET', 'POST'])
 @login_required
@@ -448,9 +514,18 @@ def polls():
 @app.route('/vote/<int:poll_id>/<int:choice>', methods=['POST'])
 @login_required
 def vote(poll_id, choice):
+    # التحقق مما إذا كان المستخدم قد صوت مسبقاً
+    existing_vote = PollVote.query.filter_by(poll_id=poll_id, username=current_user.username).first()
+    if existing_vote:
+        flash('لقد قمت بالتصويت مسبقاً في هذا الاستطلاع.', 'danger')
+        return redirect(url_for('polls'))
+        
     poll = Poll.query.get_or_404(poll_id)
     if choice == 1: poll.votes1 += 1
     elif choice == 2: poll.votes2 += 1
+    
+    new_vote = PollVote(poll_id=poll_id, username=current_user.username)
+    db.session.add(new_vote)
     db.session.commit()
     flash('تم تسجيل صوتك!', 'success')
     return redirect(url_for('polls'))
@@ -519,7 +594,14 @@ def logout():
 @login_required
 def messages():
     received = Message.query.filter_by(receiver=current_user.username).all()
-    return render_template_string(MESSAGES_HTML, messages=received)
+    
+    # تعيين جميع الرسائل كمقروءة
+    for msg in received:
+        msg.is_read = True
+    db.session.commit()
+    
+    all_users = User.query.all()
+    return render_template_string(MESSAGES_HTML, messages=received, all_users=all_users)
 
 @app.route('/send_message', methods=['POST'])
 @login_required
