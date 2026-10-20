@@ -21,7 +21,7 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # ==========================================
-# نماذج قاعدة البيانات (لن تتأثر بالكود الجديد)
+# نماذج قاعدة البيانات
 # ==========================================
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -44,39 +44,52 @@ class Poll(db.Model):
     votes1 = db.Column(db.Integer, default=0)
     votes2 = db.Column(db.Integer, default=0)
 
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sender = db.Column(db.String(100), nullable=False)
+    receiver = db.Column(db.String(100), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
 with app.app_context():
     db.create_all()
-    # الترقيع لإضافة الأعمدة الجديدة إذا كانت قاعدة البيانات قديمة
     try:
         db.session.execute('ALTER TABLE user ADD COLUMN bio VARCHAR(255) DEFAULT ""')
         db.session.execute('ALTER TABLE user ADD COLUMN profile_pic VARCHAR(255) DEFAULT "default.png"')
         db.session.commit()
     except Exception:
         db.session.rollback()
+        
     if not User.query.first():
         admin = User(username='admin', password_hash=generate_password_hash('admin123'))
         db.session.add(admin)
         db.session.commit()
 
 # ==========================================
-# بيانات التشكيلة
+# بيانات التشكيلة (مرتبة حسب الخطوط)
 # ==========================================
-PLAYERS = [
-    {"name": "النذير", "position": "حارس مرمى", "number": 1},
-    {"name": "مصعب", "position": "مدافع", "number": 4},
-    {"name": "مندر", "position": "مدافع", "number": 5},
-    {"name": "أيمن", "position": "مدافع", "number": 3},
-    {"name": "عباس", "position": "وسط", "number": 6},
-    {"name": "محمد بلال", "position": "وسط", "number": 8},
-    {"name": "البخاري", "position": "وسط", "number": 10},
-    {"name": "احمد", "position": "وسط", "number": 14},
-    {"name": "ود الشفيع", "position": "مهاجم", "number": 7},
-    {"name": "محمد", "position": "مهاجم", "number": 9},
-    {"name": "عبدالرحمن", "position": "مهاجم", "number": 11},
+LINEUPS = [
+    # الهجوم (الأعلى)
+    {"name": "محمد", "number": 9, "top": "15%", "left": "50%"},
+    {"name": "ود الشفيع", "number": 7, "top": "20%", "left": "25%"},
+    {"name": "عبدالرحمن", "number": 11, "top": "20%", "left": "75%"},
+    
+    # الوسط
+    {"name": "البخاري", "number": 10, "top": "45%", "left": "50%"},
+    {"name": "عباس", "number": 6, "top": "40%", "left": "25%"},
+    {"name": "محمد بلال", "number": 8, "top": "40%", "left": "75%"},
+    {"name": "احمد", "number": 14, "top": "55%", "left": "20%"},
+    
+    # الدفاع
+    {"name": "مصعب", "number": 4, "top": "70%", "left": "50%"},
+    {"name": "مندر", "number": 5, "top": "75%", "left": "25%"},
+    {"name": "أيمن", "number": 3, "top": "75%", "left": "75%"},
+    
+    # حراسة المرمى (الأسفل)
+    {"name": "النذير", "number": 1, "top": "90%", "left": "50%"},
 ]
 
 # ==========================================
@@ -105,12 +118,92 @@ BASE_HTML = """
         .btn-gold:hover { background-color: #b8960c; color: white; }
         .auth-form { max-width: 400px; margin: 50px auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         footer { background-color: var(--primary-color); color: white; text-align: center; padding: 20px 0; margin-top: 50px; border-top: 4px solid var(--secondary-color); }
-        .player-badge { background: linear-gradient(135deg, var(--primary-color), #2e7d32); color: white; border-radius: 20px; padding: 20px 10px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.2); transition: transform 0.3s; border: 2px solid var(--secondary-color); }
-        .player-badge:hover { transform: translateY(-5px); }
-        .player-number-badge { background-color: var(--secondary-color); color: var(--primary-color); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; margin: 0 auto 10px auto; }
         .post-card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .profile-pic { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--secondary-color); }
         .poll-btn { width: 100%; margin-bottom: 10px; text-align: right; font-weight: bold; }
+
+        /* ===== تصميم الملعب ===== */
+        .pitch-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            aspect-ratio: 2 / 3;
+            background: repeating-linear-gradient(
+                0deg,
+                #4caf50,
+                #4caf50 50px,
+                #388e3c 50px,
+                #388e3c 100px
+            );
+            border: 3px solid white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        /* الخطوط البيضاء للملعب */
+        .pitch-container::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 0; right: 0;
+            height: 2px;
+            background: rgba(255,255,255,0.5);
+        }
+        .pitch-container::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 80px; height: 80px;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .penalty-box-top {
+            position: absolute;
+            top: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 250px; height: 100px;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-top: none;
+        }
+        .penalty-box-bottom {
+            position: absolute;
+            bottom: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 250px; height: 100px;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-bottom: none;
+        }
+        /* اللاعبين */
+        .player-node {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80px;
+        }
+        .player-circle {
+            background: var(--primary-color);
+            color: var(--secondary-color);
+            width: 45px; height: 45px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 1.2rem;
+            border: 3px solid var(--secondary-color);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            margin-bottom: 5px;
+        }
+        .player-name {
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-weight: 700;
+            font-size: 0.85rem;
+            padding: 2px 8px;
+            border-radius: 5px;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -152,7 +245,6 @@ BASE_HTML = """
 </html>
 """
 
-# --- قوالب الصفحات المستقلة ---
 INDEX_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <section class="hero-section">
     <div class="container">
@@ -194,17 +286,17 @@ REGISTER_PAGE = BASE_HTML.replace('{% block content %}{% endblock %}', """
 </div>
 """)
 
+# ===== صفحة التشكيلة الجديدة =====
 PLAYERS_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="container mt-5">
-    <h2 class="text-center mb-5" style="color: var(--primary-color); font-weight: 900;">⭐ التشكيلة الأساسية ⭐</h2>
-    <div class="row g-4 justify-content-center">
-        {% for player in players %}
-        <div class="col-md-3 col-6">
-            <div class="player-badge">
-                <div class="player-number-badge">{{ player.number }}</div>
-                <div class="player-name-text" style="font-size:1.3rem; font-weight:900;">{{ player.name }}</div>
-                <div class="player-pos-text" style="color:#ddd; font-size:0.9rem;">{{ player.position }}</div>
-            </div>
+    <h2 class="text-center mb-4" style="color: var(--primary-color); font-weight: 900;">⭐ التشكيلة الأساسية ⭐</h2>
+    <div class="pitch-container">
+        <div class="penalty-box-top"></div>
+        <div class="penalty-box-bottom"></div>
+        {% for player in lineups %}
+        <div class="player-node" style="top: {{ player.top }}; left: {{ player.left }};">
+            <div class="player-circle">{{ player.number }}</div>
+            <div class="player-name">{{ player.name }}</div>
         </div>
         {% endfor %}
     </div>
@@ -367,7 +459,7 @@ def home(): return render_template_string(INDEX_HTML)
 
 @app.route('/players')
 @login_required
-def players(): return render_template_string(PLAYERS_HTML, players=PLAYERS)
+def players(): return render_template_string(PLAYERS_HTML, lineups=LINEUPS)
 
 @app.route('/matches')
 @login_required
@@ -445,10 +537,8 @@ def register():
             flash('اسم المستخدم موجود بالفعل', 'danger')
             return redirect(url_for('register'))
             
-        # إنشاء المستخدم
         new_user = User(username=username, password_hash=generate_password_hash(password))
         
-        # معالجة رفع الصورة (إذا وجدت)
         if 'profile_pic' in request.files:
             file = request.files['profile_pic']
             if file and file.filename != '':
