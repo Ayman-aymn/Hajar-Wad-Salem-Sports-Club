@@ -18,9 +18,6 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# ==========================================
-# نماذج قاعدة البيانات
-# ==========================================
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
@@ -94,30 +91,21 @@ with app.app_context():
         db.session.add(admin)
         db.session.commit()
 
+# التشكيلة (4-3-3 متباعدة)
 LINEUPS = [
-    # الهجوم
-    {"name": "منذر", "position": "جناح أيسر", "number": 9, "top": "15%", "left": "15%"},
+    {"name": "منذر", "position": "جناح أيسر", "number": 9, "top": "12%", "left": "15%"},
     {"name": "مصعب", "position": "رأس حربة", "number": 10, "top": "10%", "left": "50%"},
-    {"name": "أيمن", "position": "جناح أيمن", "number": 7, "top": "15%", "left": "85%"},
-    
-    # الوسط
-    {"name": "محمد بلال", "position": "وسط أيسر", "number": 8, "top": "45%", "left": "15%"},
-    {"name": "عباس", "position": "وسط مركزي", "number": 6, "top": "45%", "left": "50%"},
-    {"name": "البخاري", "position": "وسط أيمن", "number": 14, "top": "45%", "left": "85%"},
-    
-    # الدفاع
-    {"name": "عبدالرحمن", "position": "ظهير أيسر", "number": 3, "top": "75%", "left": "15%"},
-    {"name": "محمد", "position": "قلب دفاع", "number": 4, "top": "75%", "left": "38%"},
-    {"name": "أحمد", "position": "قلب دفاع", "number": 5, "top": "75%", "left": "62%"},
-    {"name": "محمد", "position": "ظهير أيمن", "number": 2, "top": "75%", "left": "85%"},
-    
-    # حراسة المرمى
+    {"name": "أيمن", "position": "جناح أيمن", "number": 7, "top": "12%", "left": "85%"},
+    {"name": "محمد بلال", "position": "وسط أيسر", "number": 8, "top": "42%", "left": "15%"},
+    {"name": "عباس", "position": "وسط مركزي", "number": 6, "top": "42%", "left": "50%"},
+    {"name": "البخاري", "position": "وسط أيمن", "number": 14, "top": "42%", "left": "85%"},
+    {"name": "عبدالرحمن", "position": "ظهير أيسر", "number": 3, "top": "72%", "left": "15%"},
+    {"name": "محمد", "position": "قلب دفاع", "number": 4, "top": "72%", "left": "38%"},
+    {"name": "أحمد", "position": "قلب دفاع", "number": 5, "top": "72%", "left": "62%"},
+    {"name": "محمد", "position": "ظهير أيمن", "number": 2, "top": "72%", "left": "85%"},
     {"name": "النذير", "position": "الحارس", "number": 1, "top": "92%", "left": "50%"},
 ]
 
-# ==========================================
-# القوالب (HTML)
-# ==========================================
 BASE_HTML = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -140,19 +128,22 @@ BASE_HTML = """
         .bottom-nav i { font-size: 1.4rem; margin-bottom: 4px; }
         .badge-notify { background-color: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.65rem; position: absolute; top: -6px; left: -8px; box-shadow: 0 0 10px #ef4444; }
         
-        .pitch-container { position: relative; width: 100%; max-width: 600px; margin: 20px auto; aspect-ratio: 4 / 3; background: linear-gradient(135deg, #1e5631, #0f3d24); border: 3px solid #d4af37; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; }
-        .pitch-lines { position: absolute; top: 10px; left: 10px; right: 10px; bottom: 10px; border: 2px solid rgba(255,255,255,0.3); border-radius: 5px; }
-        .pitch-lines::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.3); }
-        .pitch-lines::after { content: ''; position: absolute; top: 50%; left: 50%; width: 80px; height: 80px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; transform: translate(-50%,-50%); }
-        .player-node { position: absolute; transform: translate(-50%, -50%); text-align: center; display: flex; flex-direction: column; align-items: center; width: 70px; }
-        .player-circle { background: #0f172a; color: #d4af37; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.2rem; border: 2px solid #d4af37; box-shadow: 0 4px 10px rgba(0,0,0,0.5); margin-bottom: 5px; }
-        .player-name { background: rgba(212, 175, 55, 0.9); color: #0f172a; font-weight: 900; font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
+        /* الملعب العريض */
+        .pitch-wrapper { padding: 0; margin: 0; width: 100%; }
+        .pitch-container { position: relative; width: 100vw; height: 70vh; background: repeating-linear-gradient(0deg, #2e7d32, #2e7d32 40px, #1b5e20 40px, #1b5e20 80px); border-top: 3px solid white; border-bottom: 3px solid white; overflow: hidden; }
+        .pitch-container::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 3px; background: rgba(255,255,255,0.5); }
+        .pitch-container::after { content: ''; position: absolute; top: 50%; left: 50%; width: 120px; height: 120px; border: 3px solid rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); }
+        .penalty-box-top { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 300px; height: 100px; border: 3px solid rgba(255,255,255,0.5); border-top: none; }
+        .penalty-box-bottom { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 300px; height: 100px; border: 3px solid rgba(255,255,255,0.5); border-bottom: none; }
+        .player-node { position: absolute; transform: translate(-50%, -50%); text-align: center; display: flex; flex-direction: column; align-items: center; width: 80px; }
+        .player-icon { background: #1e3a8a; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; border: 2px solid white; margin-bottom: 2px; }
+        .player-name { background: rgba(0,0,0,0.7); color: white; font-weight: 800; font-size: 0.7rem; padding: 2px 4px; border-radius: 3px; white-space: nowrap; }
+        .player-pos { color: #fbbf24; font-weight: 700; font-size: 0.6rem; text-shadow: 1px 1px 1px black; }
 
         .form-control { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; }
         .form-control:focus { background: rgba(255,255,255,0.1); border-color: var(--green-neon); box-shadow: 0 0 10px rgba(16,185,129,0.3); color: white; }
         .form-control::placeholder { color: #94a3b8; }
         .btn-neon { background: var(--green-neon); color: #020617; font-weight: bold; box-shadow: 0 0 10px var(--green-neon); border: none; }
-        
         .media-content { max-width: 100%; border-radius: 12px; margin-top: 10px; max-height: 400px; object-fit: contain; }
     </style>
 </head>
@@ -230,20 +221,18 @@ REGISTER_PAGE = BASE_HTML.replace('{% block content %}{% endblock %}', """
 """)
 
 PLAYERS_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
-<div class="container mt-3">
-    <h4 class="text-center mb-3" style="color: var(--gold-neon); font-weight: 900; text-shadow: 0 0 15px rgba(251, 191, 36, 0.6);">⭐ التشكيلة الأساسية ⭐</h4>
-    <div class="pitch-wrapper">
-        <div class="pitch-container">
-            <div class="penalty-box-top"></div>
-            <div class="penalty-box-bottom"></div>
-            {% for player in lineups %}
-            <div class="player-node" style="top: {{ player.top }}; left: {{ player.left }};">
-                <div class="player-icon"><i class="fas fa-tshirt"></i></div>
-                <div class="player-name">{{ player.name }}</div>
-                <div class="player-pos">({{ player.position }})</div>
-            </div>
-            {% endfor %}
+<div class="pitch-wrapper mt-3">
+    <h4 class="text-center mb-2" style="color: var(--gold-neon); font-weight: 900; text-shadow: 0 0 15px rgba(251, 191, 36, 0.6);">تشكيلة فريق كرة قدم 4-3-3</h4>
+    <div class="pitch-container">
+        <div class="penalty-box-top"></div>
+        <div class="penalty-box-bottom"></div>
+        {% for player in lineups %}
+        <div class="player-node" style="top: {{ player.top }}; left: {{ player.left }};">
+            <div class="player-icon"><i class="fas fa-tshirt"></i></div>
+            <div class="player-name">{{ player.name }}</div>
+            <div class="player-pos">({{ player.position }})</div>
         </div>
+        {% endfor %}
     </div>
 </div>
 """)
@@ -258,15 +247,6 @@ MATCHES_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
             <span class="fw-bold text-light">نسور حجرودسالم</span>
             <span class="fw-bold fs-4 px-3 py-1" style="background: rgba(16,185,129,0.2); border: 1px solid var(--green-neon); border-radius: 8px; color: var(--green-neon);">3 - 0</span>
             <span class="fw-bold text-light">النيل أبورغيوه</span>
-        </div>
-    </div>
-    <div class="glass-panel text-center">
-        <span class="badge bg-info text-dark mb-2">قادمة</span>
-        <h5 class="text-light">2026-11-01 | 17:00</h5>
-        <div class="d-flex justify-content-between align-items-center mt-3">
-            <span class="fw-bold text-light">نسور حجرودسالم</span>
-            <span class="fw-bold fs-4" style="color: var(--gold-neon);">VS</span>
-            <span class="fw-bold text-light">فريق الوحدة</span>
         </div>
     </div>
 </div>
@@ -306,7 +286,6 @@ FEED_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
             <span class="text-light"><i class="fas fa-comment"></i> {{ post.comments|length }}</span>
         </div>
         
-        <!-- خانة التعليقات (تم إصلاحها) -->
         <div class="mt-2">
             {% for comment in post.comments %}
             <div class="text-light mb-1" style="font-size:0.85rem; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 5px;"><strong>{{ comment.author }}:</strong> {{ comment.content }}</div>
@@ -340,16 +319,8 @@ POLLS_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
     <div class="glass-panel mb-3">
         <h5 class="fw-bold" style="color: var(--green-neon);">{{ poll.question }}</h5>
         <div class="row mt-3">
-            <div class="col-6">
-                <form action="/vote/{{ poll.id }}/1" method="POST">
-                    <button type="submit" class="btn btn-outline-success w-100">{{ poll.option1 }} ({{ poll.votes1 }})</button>
-                </form>
-            </div>
-            <div class="col-6">
-                <form action="/vote/{{ poll.id }}/2" method="POST">
-                    <button type="submit" class="btn btn-outline-primary w-100">{{ poll.option2 }} ({{ poll.votes2 }})</button>
-                </form>
-            </div>
+            <div class="col-6"><form action="/vote/{{ poll.id }}/1" method="POST"><button type="submit" class="btn btn-outline-success w-100">{{ poll.option1 }} ({{ poll.votes1 }})</button></form></div>
+            <div class="col-6"><form action="/vote/{{ poll.id }}/2" method="POST"><button type="submit" class="btn btn-outline-primary w-100">{{ poll.option2 }} ({{ poll.votes2 }})</button></form></div>
         </div>
     </div>
     {% endfor %}
@@ -366,7 +337,6 @@ PROFILE_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
         {% endif %}
         <h4 style="color: var(--green-neon);">{{ current_user.username }}</h4>
         <p class="text-light">{{ current_user.bio if current_user.bio else 'وصف الموقع الرسمي.' }}</p>
-        
         <form method="POST" enctype="multipart/form-data" class="mt-4 text-start">
             <label class="form-label fw-bold text-light">الوصف</label>
             <input type="text" name="bio" class="form-control mb-3" value="{{ current_user.bio }}" placeholder="اكتب وصفاً...">
@@ -390,19 +360,12 @@ USER_PROFILE_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
         <p class="text-light">{{ user.bio if user.bio else 'لا يوجد وصف.' }}</p>
         <a href="/new_chat/{{ user.username }}" class="btn btn-neon w-100"><i class="fas fa-comment"></i> مراسلة</a>
     </div>
-    
     <h5 class="mt-4 mb-3" style="color: var(--green-neon);">منشورات {{ user.username }}</h5>
     {% for post in posts %}
     <div class="glass-panel">
         {% if post.content %}<p class="fs-6 text-light">{{ post.content }}</p>{% endif %}
-        {% if post.media %}
-            {% if post.media_type == 'image' %}<img src="{{ url_for('static', filename='uploads/' + post.media) }}" class="media-content">
-            {% elif post.media_type == 'video' %}<video controls class="media-content"><source src="{{ url_for('static', filename='uploads/' + post.media) }}"></video>{% endif %}
-        {% endif %}
         <small class="text-muted">{{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
     </div>
-    {% else %}
-    <p class="text-muted text-center">لا توجد منشورات لهذا المستخدم.</p>
     {% endfor %}
 </div>
 """)
@@ -442,8 +405,7 @@ CHAT_HTML = """
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Tajawal', sans-serif; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; 
-               background: url('https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?q=80&w=2070&auto=format&fit=crop') no-repeat center center/cover; }
+        body { font-family: 'Tajawal', sans-serif; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; background: url('https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?q=80&w=2070&auto=format&fit=crop') no-repeat center center/cover; }
         .chat-header { background: rgba(2,6,23,0.6); backdrop-filter: blur(10px); color: white; padding: 10px 15px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .chat-header a { color: var(--green-neon); text-decoration: none; }
         .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; }
@@ -496,25 +458,17 @@ CHAT_HTML = """
             <label for="chat-media" class="icon-btn mb-0" style="cursor: pointer;"><i class="fas fa-camera"></i></label>
             <input type="file" name="media" id="chat-media" class="d-none" accept="image/*,video/*" onchange="this.form.submit()">
             <div class="input-wrapper flex-grow-1">
-                <button type="button" class="icon-btn" onclick="startRecording()"><i class="fas fa-microphone"></i></button>
+                <button type="button" class="icon-btn" onclick="alert('جاري تسجيل الصوت... (محاكاة)')"><i class="fas fa-microphone"></i></button>
                 <input type="text" name="content" placeholder="اكتب رسالة..." autocomplete="off">
                 <button type="button" class="icon-btn"><i class="fas fa-smile"></i></button>
             </div>
             <button type="submit" class="btn rounded-circle" style="background: var(--green-neon); color: #020617; width: 45px; height: 45px; box-shadow: 0 0 10px var(--green-neon);"><i class="fas fa-paper-plane"></i></button>
         </form>
     </div>
-    <script>
-        function startRecording() {
-            alert("جاري تسجيل الصوت... (محاكاة)");
-        }
-    </script>
 </body>
 </html>
 """
 
-# ==========================================
-# المسارات
-# ==========================================
 @app.context_processor
 def inject_unread_count():
     if current_user.is_authenticated:
