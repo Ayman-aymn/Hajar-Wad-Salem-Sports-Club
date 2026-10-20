@@ -95,21 +95,24 @@ with app.app_context():
         db.session.commit()
 
 LINEUPS = [
-    # الهجوم
-    {"name": "منذر", "position": "جناح يسار", "number": 9, "top": "20%", "left": "25%"},
-    {"name": "مصعب", "position": "رأس حربة", "number": 9, "top": "15%", "left": "50%"},
-    {"name": "أيمن", "position": "جناح يمين", "number": 7, "top": "20%", "left": "75%"},
-    # الوسط
-    {"name": "محمد بلال", "position": "وسط يسار", "number": 8, "top": "45%", "left": "25%"},
-    {"name": "عباس", "position": "وسط مركزي", "number": 10, "top": "45%", "left": "50%"},
-    {"name": "البخاري", "position": "وسط يمين", "number": 6, "top": "45%", "left": "75%"},
-    # الدفاع
-    {"name": "عبدالرحمن", "position": "ظهير أيسر", "number": 3, "top": "70%", "left": "15%"},
-    {"name": "محمد", "position": "قلب دفاع", "number": 4, "top": "75%", "left": "38%"},
-    {"name": "أحمد", "position": "قلب دفاع", "number": 5, "top": "75%", "left": "62%"},
-    {"name": "محمد", "position": "ظهير أيمن", "number": 2, "top": "70%", "left": "85%"},
+    # الهجوم (3 مهاجمين)
+    {"name": "منذر", "position": "جناح يسار", "number": 9, "top": "12%", "left": "20%"},
+    {"name": "مصعب", "position": "رأس حربة", "number": 10, "top": "10%", "left": "50%"},
+    {"name": "أيمن", "position": "جناح يمين", "number": 7, "top": "12%", "left": "80%"},
+    
+    # الوسط (3 لاعبين)
+    {"name": "محمد بلال", "position": "وسط يسار", "number": 8, "top": "40%", "left": "20%"},
+    {"name": "عباس", "position": "وسط مركزي", "number": 6, "top": "38%", "left": "50%"},
+    {"name": "البخاري", "position": "وسط يمين", "number": 14, "top": "40%", "left": "80%"},
+    
+    # الدفاع (4 مدافعين)
+    {"name": "عبدالرحمن", "position": "ظهير أيسر", "number": 3, "top": "70%", "left": "10%"},
+    {"name": "محمد", "position": "قلب دفاع", "number": 4, "top": "68%", "left": "36%"},
+    {"name": "أحمد", "position": "قلب دفاع", "number": 5, "top": "68%", "left": "64%"},
+    {"name": "محمد", "position": "ظهير أيمن", "number": 2, "top": "70%", "left": "90%"},
+    
     # حراسة المرمى
-    {"name": "النذير", "position": "الحارس", "number": 1, "top": "90%", "left": "50%"},
+    {"name": "النذير", "position": "الحارس", "number": 1, "top": "88%", "left": "50%"},
 ]
 
 # ==========================================
@@ -228,7 +231,7 @@ REGISTER_PAGE = BASE_HTML.replace('{% block content %}{% endblock %}', """
 
 PLAYERS_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="container mt-3">
-    <h4 class="text-center mb-3" style="color: var(--gold-neon); font-weight: 900; text-shadow: 0 0 15px rgba(251, 191, 36, 0.6);">تشكيلة فريق كرة قدم 4-3-3</h4>
+    <h4 class="text-center mb-3" style="color: var(--gold-neon); font-weight: 900; text-shadow: 0 0 15px rgba(251, 191, 36, 0.6);">⭐ التشكيلة الأساسية ⭐</h4>
     <div class="pitch-wrapper">
         <div class="pitch-container">
             <div class="penalty-box-top"></div>
