@@ -63,32 +63,38 @@ with app.app_context():
     except Exception:
         db.session.rollback()
         
-    if not User.query.first():
-        admin = User(username='admin', password_hash=generate_password_hash('admin123'))
+    # إنشاء حساب الأدمن الخاص بك إذا لم يكن موجوداً
+    admin_user = User.query.filter_by(username='Aymn').first()
+    if not admin_user:
+        admin = User(username='Aymn', password_hash=generate_password_hash('9910'))
         db.session.add(admin)
+        db.session.commit()
+    else:
+        # إذا كان الحساب موجوداً، نضمن أن كلمة المرور هي 9910 (اختياري)
+        admin_user.password_hash = generate_password_hash('9910')
         db.session.commit()
 
 # ==========================================
-# بيانات التشكيلة (مرتبة حسب الخطوط)
+# التشكيلة 4-3-3 (مطابقة للصورة)
 # ==========================================
 LINEUPS = [
-    # الهجوم (الأعلى)
-    {"name": "محمد", "number": 9, "top": "15%", "left": "50%"},
-    {"name": "ود الشفيع", "number": 7, "top": "20%", "left": "25%"},
-    {"name": "عبدالرحمن", "number": 11, "top": "20%", "left": "75%"},
+    # الهجوم (3 مهاجمين)
+    {"name": "مندر", "number": 9, "top": "15%", "left": "25%"},   # جناح يسار
+    {"name": "مصعب", "number": 9, "top": "12%", "left": "50%"},   # رأس حربة
+    {"name": "أيمن", "number": 7, "top": "15%", "left": "75%"},   # جناح يمين
     
-    # الوسط
-    {"name": "البخاري", "number": 10, "top": "45%", "left": "50%"},
-    {"name": "عباس", "number": 6, "top": "40%", "left": "25%"},
-    {"name": "محمد بلال", "number": 8, "top": "40%", "left": "75%"},
-    {"name": "احمد", "number": 14, "top": "55%", "left": "20%"},
+    # الوسط (3 لاعبين)
+    {"name": "محمد بلال", "number": 8, "top": "40%", "left": "25%"}, # وسط يسار
+    {"name": "عباس", "number": 10, "top": "42%", "left": "50%"},     # وسط مركزي
+    {"name": "البخاري", "number": 6, "top": "40%", "left": "75%"},   # وسط يمين
     
-    # الدفاع
-    {"name": "مصعب", "number": 4, "top": "70%", "left": "50%"},
-    {"name": "مندر", "number": 5, "top": "75%", "left": "25%"},
-    {"name": "أيمن", "number": 3, "top": "75%", "left": "75%"},
+    # الدفاع (4 مدافعين)
+    {"name": "عبدالرحمن", "number": 3, "top": "65%", "left": "15%"}, # ظهير أيسر
+    {"name": "محمد", "number": 4, "top": "70%", "left": "38%"},      # قلب دفاع
+    {"name": "أحمد", "number": 5, "top": "70%", "left": "62%"},      # قلب دفاع
+    {"name": "محمد", "number": 2, "top": "65%", "left": "85%"},      # ظهير أيمن
     
-    # حراسة المرمى (الأسفل)
+    # حراسة المرمى
     {"name": "النذير", "number": 1, "top": "90%", "left": "50%"},
 ]
 
@@ -129,81 +135,20 @@ BASE_HTML = """
             max-width: 600px;
             margin: 0 auto;
             aspect-ratio: 2 / 3;
-            background: repeating-linear-gradient(
-                0deg,
-                #4caf50,
-                #4caf50 50px,
-                #388e3c 50px,
-                #388e3c 100px
-            );
+            background: repeating-linear-gradient(0deg, #4caf50, #4caf50 50px, #388e3c 50px, #388e3c 100px);
             border: 3px solid white;
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             overflow: hidden;
         }
-        /* الخطوط البيضاء للملعب */
-        .pitch-container::before {
-            content: '';
-            position: absolute;
-            top: 50%; left: 0; right: 0;
-            height: 2px;
-            background: rgba(255,255,255,0.5);
-        }
-        .pitch-container::after {
-            content: '';
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 80px; height: 80px;
-            border: 2px solid rgba(255,255,255,0.5);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-        }
-        .penalty-box-top {
-            position: absolute;
-            top: 0; left: 50%;
-            transform: translateX(-50%);
-            width: 250px; height: 100px;
-            border: 2px solid rgba(255,255,255,0.5);
-            border-top: none;
-        }
-        .penalty-box-bottom {
-            position: absolute;
-            bottom: 0; left: 50%;
-            transform: translateX(-50%);
-            width: 250px; height: 100px;
-            border: 2px solid rgba(255,255,255,0.5);
-            border-bottom: none;
-        }
-        /* اللاعبين */
-        .player-node {
-            position: absolute;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 80px;
-        }
-        .player-circle {
-            background: var(--primary-color);
-            color: var(--secondary-color);
-            width: 45px; height: 45px;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 900; font-size: 1.2rem;
-            border: 3px solid var(--secondary-color);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-            margin-bottom: 5px;
-        }
-        .player-name {
-            background: rgba(0,0,0,0.7);
-            color: white;
-            font-weight: 700;
-            font-size: 0.85rem;
-            padding: 2px 8px;
-            border-radius: 5px;
-            white-space: nowrap;
-        }
+        .pitch-container::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.5); }
+        .pitch-container::after { content: ''; position: absolute; top: 50%; left: 50%; width: 80px; height: 80px; border: 2px solid rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); }
+        .penalty-box-top { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 250px; height: 100px; border: 2px solid rgba(255,255,255,0.5); border-top: none; }
+        .penalty-box-bottom { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 250px; height: 100px; border: 2px solid rgba(255,255,255,0.5); border-bottom: none; }
+        
+        .player-node { position: absolute; transform: translate(-50%, -50%); text-align: center; display: flex; flex-direction: column; align-items: center; width: 80px; }
+        .player-circle { background: var(--primary-color); color: var(--secondary-color); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; border: 2px solid var(--secondary-color); box-shadow: 0 4px 8px rgba(0,0,0,0.4); margin-bottom: 5px; }
+        .player-name { background: rgba(0,0,0,0.7); color: white; font-weight: 700; font-size: 0.8rem; padding: 2px 6px; border-radius: 5px; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -286,7 +231,6 @@ REGISTER_PAGE = BASE_HTML.replace('{% block content %}{% endblock %}', """
 </div>
 """)
 
-# ===== صفحة التشكيلة الجديدة =====
 PLAYERS_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="container mt-5">
     <h2 class="text-center mb-4" style="color: var(--primary-color); font-weight: 900;">⭐ التشكيلة الأساسية ⭐</h2>
@@ -322,17 +266,20 @@ MATCHES_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 </div>
 """)
 
+# ===== صفحة المنشورات (تظهر للجميع لكن النشر للأدمن فقط) =====
 FEED_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
+            {% if current_user.username == 'Aymn' %}
             <div class="post-card mb-4">
-                <h4 style="color: var(--primary-color);">شاركنا رأيك</h4>
+                <h4 style="color: var(--primary-color);">شاركنا رأيك (أنت الأدمن)</h4>
                 <form method="POST">
                     <textarea name="content" class="form-control mb-2" rows="3" placeholder="ماذا يدور في ذهنك يا نسر؟" required></textarea>
                     <button type="submit" class="btn btn-gold w-100">نشر</button>
                 </form>
             </div>
+            {% endif %}
             <h3 class="mb-3" style="color: var(--primary-color);">📰 آخر المنشورات</h3>
             {% for post in posts %}
             <div class="post-card">
@@ -344,19 +291,21 @@ FEED_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
                 <small class="text-muted">{{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
             </div>
             {% else %}
-            <p class="text-center text-muted">لا توجد منشورات بعد. كن أول من ينشر!</p>
+            <p class="text-center text-muted">لا توجد منشورات بعد.</p>
             {% endfor %}
         </div>
     </div>
 </div>
 """)
 
+# ===== صفحة التصويت (إنشاء للأدمن فقط، تصويت للجميع) =====
 POLLS_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
+            {% if current_user.username == 'Aymn' %}
             <div class="post-card mb-4">
-                <h4 style="color: var(--primary-color);">إنشاء تصويت جديد</h4>
+                <h4 style="color: var(--primary-color);">إنشاء تصويت جديد (أنت الأدمن)</h4>
                 <form method="POST">
                     <input type="text" name="question" class="form-control mb-2" placeholder="السؤال (مثلاً: أفضل لاعب اليوم؟)" required>
                     <div class="row">
@@ -366,6 +315,7 @@ POLLS_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
                     <button type="submit" class="btn btn-gold w-100">إنشاء التصويت</button>
                 </form>
             </div>
+            {% endif %}
             <h3 class="mb-3" style="color: var(--primary-color);">🗳️ التصويتات النشطة</h3>
             {% for poll in polls %}
             <div class="post-card mb-3">
@@ -469,6 +419,9 @@ def matches(): return render_template_string(MATCHES_HTML)
 @login_required
 def feed():
     if request.method == 'POST':
+        if current_user.username != 'Aymn':
+            flash('عذراً، النشر متاح للأدمن فقط.', 'danger')
+            return redirect(url_for('feed'))
         new_post = Post(author=current_user.username, content=request.form['content'])
         db.session.add(new_post)
         db.session.commit()
@@ -481,6 +434,9 @@ def feed():
 @login_required
 def polls():
     if request.method == 'POST':
+        if current_user.username != 'Aymn':
+            flash('عذراً، إنشاء التصويت متاح للأدمن فقط.', 'danger')
+            return redirect(url_for('polls'))
         new_poll = Poll(question=request.form['question'], option1=request.form['option1'], option2=request.form['option2'])
         db.session.add(new_poll)
         db.session.commit()
