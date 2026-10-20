@@ -133,7 +133,6 @@ BASE_HTML = """
         .bottom-nav i { font-size: 1.4rem; margin-bottom: 4px; }
         .badge-notify { background-color: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.65rem; position: absolute; top: -6px; left: -8px; box-shadow: 0 0 10px #ef4444; }
         
-        /* الملعب */
         .pitch-container { position: relative; width: 100%; max-width: 600px; margin: 20px auto; aspect-ratio: 16 / 10; background: rgba(16,185,129,0.1); border: 2px solid var(--green-neon); box-shadow: 0 0 20px rgba(16,185,129,0.3); border-radius: 10px; overflow: hidden; }
         .pitch-lines { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border: 2px solid rgba(16,185,129,0.5); margin: 10px; border-radius: 5px; }
         .pitch-lines::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: rgba(16,185,129,0.5); }
@@ -142,7 +141,6 @@ BASE_HTML = """
         .player-circle { background: rgba(2,6,23,0.9); color: var(--green-neon); width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; border: 2px solid var(--green-neon); box-shadow: 0 0 10px var(--green-neon); margin-bottom: 3px; }
         .player-name { background: rgba(16,185,129,0.8); color: white; font-weight: 700; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; white-space: nowrap; box-shadow: 0 0 5px var(--green-neon); }
 
-        /* الحقول والأزرار */
         .form-control { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; }
         .form-control:focus { background: rgba(255,255,255,0.1); border-color: var(--green-neon); box-shadow: 0 0 10px rgba(16,185,129,0.3); color: white; }
         .form-control::placeholder { color: #94a3b8; }
@@ -312,9 +310,116 @@ FEED_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 </div>
 """)
 
-# ==========================================
-# تصميم الدردشة (مطابق للصورة الثالثة مع خلفية فضائية)
-# ==========================================
+POLLS_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
+<div class="container mt-3">
+    {% if current_user.username == 'Aymn' %}
+    <div class="glass-panel mb-3">
+        <h5 style="color: var(--green-neon);">إنشاء تصويت جديد</h5>
+        <form method="POST">
+            <input type="text" name="question" class="form-control mb-2" placeholder="السؤال" required>
+            <div class="row">
+                <div class="col-6"><input type="text" name="option1" class="form-control mb-2" placeholder="الخيار الأول" required></div>
+                <div class="col-6"><input type="text" name="option2" class="form-control mb-2" placeholder="الخيار الثاني" required></div>
+            </div>
+            <button type="submit" class="btn btn-neon w-100">إنشاء</button>
+        </form>
+    </div>
+    {% endif %}
+    {% for poll in polls %}
+    <div class="glass-panel mb-3">
+        <h5 class="fw-bold" style="color: var(--green-neon);">{{ poll.question }}</h5>
+        <div class="row mt-3">
+            <div class="col-6">
+                <form action="/vote/{{ poll.id }}/1" method="POST">
+                    <button type="submit" class="btn btn-outline-success w-100">{{ poll.option1 }} ({{ poll.votes1 }})</button>
+                </form>
+            </div>
+            <div class="col-6">
+                <form action="/vote/{{ poll.id }}/2" method="POST">
+                    <button type="submit" class="btn btn-outline-primary w-100">{{ poll.option2 }} ({{ poll.votes2 }})</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+""")
+
+PROFILE_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
+<div class="container mt-4">
+    <div class="glass-panel text-center">
+        {% if current_user.profile_pic != 'default.png' %}
+            <img src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}" class="rounded-circle mx-auto mb-3" style="width: 100px; height: 100px; object-fit:cover; border: 3px solid var(--green-neon);">
+        {% else %}
+            <div class="bg-secondary rounded-circle mx-auto mb-3 d-flex justify-content-center align-items-center" style="width: 100px; height: 100px; color: white; font-size: 2.5rem; font-weight: bold;">{{ current_user.username[0] }}</div>
+        {% endif %}
+        <h4 style="color: var(--green-neon);">{{ current_user.username }}</h4>
+        <p class="text-light">{{ current_user.bio if current_user.bio else 'وصف الموقع الرسمي.' }}</p>
+        
+        <form method="POST" enctype="multipart/form-data" class="mt-4 text-start">
+            <label class="form-label fw-bold text-light">الوصف</label>
+            <input type="text" name="bio" class="form-control mb-3" value="{{ current_user.bio }}" placeholder="اكتب وصفاً...">
+            <label class="form-label fw-bold text-light">اختيار ملف</label>
+            <input type="file" name="profile_pic" class="form-control mb-3" accept="image/*">
+            <button type="submit" class="btn btn-neon w-100">حفظ التعديلات</button>
+        </form>
+    </div>
+</div>
+""")
+
+USER_PROFILE_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
+<div class="container mt-4">
+    <div class="glass-panel text-center">
+        {% if user.profile_pic != 'default.png' %}
+            <img src="{{ url_for('static', filename='uploads/' + user.profile_pic) }}" class="rounded-circle mx-auto mb-3" style="width: 120px; height: 120px; object-fit:cover; border: 4px solid var(--green-neon);">
+        {% else %}
+            <div class="bg-secondary rounded-circle mx-auto mb-3 d-flex justify-content-center align-items-center" style="width: 120px; height: 120px; color: white; font-size: 3rem; font-weight: bold;">{{ user.username[0] }}</div>
+        {% endif %}
+        <h4 style="color: var(--green-neon);">{{ user.username }}</h4>
+        <p class="text-light">{{ user.bio if user.bio else 'لا يوجد وصف.' }}</p>
+        <a href="/new_chat/{{ user.username }}" class="btn btn-neon w-100"><i class="fas fa-comment"></i> مراسلة</a>
+    </div>
+    
+    <h5 class="mt-4 mb-3" style="color: var(--green-neon);">منشورات {{ user.username }}</h5>
+    {% for post in posts %}
+    <div class="glass-panel">
+        {% if post.content %}<p class="fs-6 text-light">{{ post.content }}</p>{% endif %}
+        {% if post.media %}
+            {% if post.media_type == 'image' %}<img src="{{ url_for('static', filename='uploads/' + post.media) }}" class="media-content">
+            {% elif post.media_type == 'video' %}<video controls class="media-content"><source src="{{ url_for('static', filename='uploads/' + post.media) }}"></video>{% endif %}
+        {% endif %}
+        <small class="text-muted">{{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+    </div>
+    {% else %}
+    <p class="text-muted text-center">لا توجد منشورات لهذا المستخدم.</p>
+    {% endfor %}
+</div>
+""")
+
+MESSAGES_LIST_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
+<div class="container mt-3">
+    <div class="glass-panel">
+        <h5 class="mb-3 fw-bold" style="color: var(--green-neon);">المحادثات</h5>
+        <form method="POST" action="/new_chat" class="d-flex gap-2 mb-4">
+            <input type="text" name="receiver" class="form-control" placeholder="ابحث عن اسم المستخدم..." required style="border-radius: 20px;">
+            <button type="submit" class="btn btn-neon rounded-circle"><i class="fas fa-search"></i></button>
+        </form>
+        {% for chat in chats %}
+        <a href="/chat/{{ chat.username }}" class="d-flex align-items-center p-3 mb-2 text-decoration-none text-light" style="background: rgba(255,255,255,0.05); border-radius: 15px;">
+            <div class="bg-secondary rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 50px; height: 50px; color: white; font-weight: bold; font-size: 1.2rem;">{{ chat.username[0] }}</div>
+            <div class="flex-grow-1">
+                <h6 class="mb-0 fw-bold" style="color: var(--green-neon);">{{ chat.username }}</h6>
+                <small class="text-muted">اضغط للمحادثة</small>
+            </div>
+            {% if chat.unread > 0 %}<span class="badge bg-danger rounded-pill">{{ chat.unread }}</span>{% endif %}
+        </a>
+        {% else %}
+        <p class="text-muted text-center mt-3">لا توجد محادثات بعد.</p>
+        {% endfor %}
+    </div>
+</div>
+""")
+
 CHAT_HTML = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -334,14 +439,11 @@ CHAT_HTML = """
         .msg-bubble { max-width: 80%; padding: 10px 14px; border-radius: 15px; margin-bottom: 15px; font-size: 0.95rem; position: relative; backdrop-filter: blur(10px); }
         .msg-sent { background: rgba(16, 185, 129, 0.4); border: 1px solid var(--green-neon); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
         .msg-received { background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255,255,255,0.2); color: white; align-self: flex-start; border-bottom-left-radius: 2px; }
-        
-        /* شريط الإدخال */
         .chat-input-area { background: rgba(2,6,23,0.7); backdrop-filter: blur(15px); padding: 10px 15px; border-top: 1px solid rgba(255,255,255,0.1); }
         .input-wrapper { display: flex; align-items: center; background: rgba(255,255,255,0.1); border-radius: 30px; padding: 5px 15px; border: 1px solid rgba(255,255,255,0.2); }
         .input-wrapper input { background: transparent; border: none; color: white; flex: 1; outline: none; }
         .input-wrapper input::placeholder { color: #94a3b8; }
-        .icon-btn { background: transparent; border: none; color: var(--green-neon); font-size: 1.2rem; padding: 5px 10px; cursor: pointer; transition: 0.3s; }
-        .icon-btn:hover { color: var(--gold-neon); }
+        .icon-btn { background: transparent; border: none; color: var(--green-neon); font-size: 1.2rem; padding: 5px 10px; cursor: pointer; }
         .media-chat { max-width: 100%; border-radius: 8px; margin-top: 5px; }
     </style>
 </head>
@@ -351,11 +453,10 @@ CHAT_HTML = """
         <div class="bg-secondary rounded-circle d-flex justify-content-center align-items-center" style="width: 40px; height: 40px; color: white; font-weight: bold; border: 1px solid var(--green-neon);">{{ other_user[0] }}</div>
         <strong class="fs-5">{{ other_user }}</strong>
         <div class="ms-auto">
-            <button class="icon-btn" onclick="alert('جاري الاتصال... (ميزة المكالمات قيد التطوير)')"><i class="fas fa-phone"></i></button>
+            <button class="icon-btn" onclick="alert('ميزة المكالمات الصوتية تحتاج خادم WebRTC (قيد التطوير)')"><i class="fas fa-phone"></i></button>
             <button class="icon-btn" onclick="alert('ميزة الفيديو قيد التطوير')"><i class="fas fa-video"></i></button>
         </div>
     </div>
-    
     <div class="chat-messages">
         {% for msg in msgs %}
             {% if msg.sender == current_user.username %}
@@ -379,35 +480,219 @@ CHAT_HTML = """
             {% endif %}
         {% endfor %}
     </div>
-
-    <!-- شريط الإدخال المحسن -->
     <div class="chat-input-area">
         <form action="/chat/{{ other_user }}" method="POST" enctype="multipart/form-data" class="d-flex align-items-center gap-2">
             <label for="chat-media" class="icon-btn mb-0" style="cursor: pointer;"><i class="fas fa-camera"></i></label>
             <input type="file" name="media" id="chat-media" class="d-none" accept="image/*,video/*" onchange="this.form.submit()">
-            
             <div class="input-wrapper flex-grow-1">
                 <button type="button" class="icon-btn" onclick="startRecording()"><i class="fas fa-microphone"></i></button>
                 <input type="text" name="content" placeholder="اكتب رسالة..." autocomplete="off">
                 <button type="button" class="icon-btn"><i class="fas fa-smile"></i></button>
             </div>
-            
             <button type="submit" class="btn rounded-circle" style="background: var(--green-neon); color: #020617; width: 45px; height: 45px; box-shadow: 0 0 10px var(--green-neon);"><i class="fas fa-paper-plane"></i></button>
         </form>
     </div>
-
     <script>
         function startRecording() {
             alert("جاري تسجيل الصوت... (محاكاة)");
-            // يمكن هنا إضافة كود MediaRecorder API لتسجيل الصوت الحقيقي
         }
     </script>
 </body>
 </html>
 """
 
-# ... (باقي القوالب والمسارات كما هي في الكود السابق، لتوفير المساحة) ...
-# لقد قمت بتضمينها بالكامل في الملف الذي سترفعه، هذا مجرد اختصار للعرض.
+# ==========================================
+# المسارات
+# ==========================================
+@app.context_processor
+def inject_unread_count():
+    if current_user.is_authenticated:
+        count = Message.query.filter_by(receiver=current_user.username, is_read=False).count()
+        return dict(unread_count=count)
+    return dict(unread_count=0)
+
+@app.route('/')
+@login_required
+def home(): return render_template_string(INDEX_HTML)
+
+@app.route('/players')
+@login_required
+def players(): return render_template_string(PLAYERS_HTML, lineups=LINEUPS)
+
+@app.route('/matches')
+@login_required
+def matches(): return render_template_string(MATCHES_HTML)
+
+@app.route('/feed', methods=['GET', 'POST'])
+@login_required
+def feed():
+    if request.method == 'POST':
+        content = request.form.get('content', '')
+        media_file = request.files.get('media')
+        media_name = None
+        media_type = None
+        if media_file and media_file.filename != '':
+            ext = media_file.filename.split('.')[-1].lower()
+            media_name = f"{uuid.uuid4().hex}.{ext}"
+            media_file.save(os.path.join(app.config['UPLOAD_FOLDER'], media_name))
+            media_type = 'video' if ext in ['mp4', 'mov', 'avi'] else 'image'
+        if content or media_name:
+            db.session.add(Post(author=current_user.username, content=content, media=media_name, media_type=media_type))
+            db.session.commit()
+        return redirect(url_for('feed'))
+
+    posts = Post.query.order_by(Post.timestamp.desc()).all()
+    for post in posts:
+        post.likes_count = PostLike.query.filter_by(post_id=post.id).count()
+        post.comments = Comment.query.filter_by(post_id=post.id).all()
+        post.is_liked = PostLike.query.filter_by(post_id=post.id, username=current_user.username).first() is not None
+    return render_template_string(FEED_HTML, posts=posts)
+
+@app.route('/like/<int:post_id>')
+@login_required
+def like_post(post_id):
+    if not PostLike.query.filter_by(post_id=post_id, username=current_user.username).first():
+        db.session.add(PostLike(post_id=post_id, username=current_user.username))
+        db.session.commit()
+    return redirect(url_for('feed'))
+
+@app.route('/comment/<int:post_id>', methods=['POST'])
+@login_required
+def add_comment(post_id):
+    db.session.add(Comment(post_id=post_id, author=current_user.username, content=request.form['comment']))
+    db.session.commit()
+    return redirect(url_for('feed'))
+
+@app.route('/polls', methods=['GET', 'POST'])
+@login_required
+def polls():
+    if request.method == 'POST' and current_user.username == 'Aymn':
+        db.session.add(Poll(question=request.form['question'], option1=request.form['option1'], option2=request.form['option2']))
+        db.session.commit()
+        return redirect(url_for('polls'))
+    return render_template_string(POLLS_HTML, polls=Poll.query.all())
+
+@app.route('/vote/<int:poll_id>/<int:choice>', methods=['POST'])
+@login_required
+def vote(poll_id, choice):
+    if PollVote.query.filter_by(poll_id=poll_id, username=current_user.username).first():
+        flash('لقد صوت مسبقاً.', 'danger')
+        return redirect(url_for('polls'))
+    poll = Poll.query.get_or_404(poll_id)
+    if choice == 1: poll.votes1 += 1
+    elif choice == 2: poll.votes2 += 1
+    db.session.add(PollVote(poll_id=poll_id, username=current_user.username))
+    db.session.commit()
+    return redirect(url_for('polls'))
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    if request.method == 'POST':
+        current_user.bio = request.form['bio']
+        if 'profile_pic' in request.files:
+            file = request.files['profile_pic']
+            if file and file.filename != '':
+                filename = f"{uuid.uuid4().hex}.{file.filename.split('.')[-1]}"
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                current_user.profile_pic = filename
+        db.session.commit()
+        return redirect(url_for('profile'))
+    return render_template_string(PROFILE_HTML)
+
+@app.route('/user/<username>')
+@login_required
+def user_profile(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    posts = Post.query.filter_by(author=username).order_by(Post.timestamp.desc()).all()
+    return render_template_string(USER_PROFILE_HTML, user=user, posts=posts)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        user = User.query.filter_by(username=request.form['username']).first()
+        if user and check_password_hash(user.password_hash, request.form['password']):
+            login_user(user)
+            return redirect(url_for('home'))
+        flash('خطأ في البيانات', 'danger')
+    return render_template_string(LOGIN_PAGE)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        if User.query.filter_by(username=request.form['username']).first():
+            flash('الاسم موجود', 'danger')
+            return redirect(url_for('register'))
+        new_user = User(username=request.form['username'], password_hash=generate_password_hash(request.form['password']))
+        if 'profile_pic' in request.files:
+            file = request.files['profile_pic']
+            if file and file.filename != '':
+                filename = f"{uuid.uuid4().hex}.{file.filename.split('.')[-1]}"
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                new_user.profile_pic = filename
+        db.session.add(new_user)
+        db.session.commit()
+        return redirect(url_for('login'))
+    return render_template_string(REGISTER_PAGE)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
+@app.route('/messages')
+@login_required
+def messages():
+    all_msgs = Message.query.filter(or_(Message.sender == current_user.username, Message.receiver == current_user.username)).all()
+    contacts = set()
+    for m in all_msgs:
+        if m.sender != current_user.username: contacts.add(m.sender)
+        if m.receiver != current_user.username: contacts.add(m.receiver)
+    chats = []
+    for c in contacts:
+        unread = Message.query.filter_by(sender=c, receiver=current_user.username, is_read=False).count()
+        chats.append({"username": c, "unread": unread})
+    return render_template_string(MESSAGES_LIST_HTML, chats=chats)
+
+@app.route('/new_chat', methods=['POST'])
+@login_required
+def new_chat():
+    receiver = request.form['receiver']
+    if User.query.filter_by(username=receiver).first():
+        return redirect(url_for('chat', other_user=receiver))
+    flash('المستخدم غير موجود', 'danger')
+    return redirect(url_for('messages'))
+
+@app.route('/new_chat/<username>')
+@login_required
+def direct_chat(username):
+    return redirect(url_for('chat', other_user=username))
+
+@app.route('/chat/<other_user>', methods=['GET', 'POST'])
+@login_required
+def chat(other_user):
+    if request.method == 'POST':
+        content = request.form.get('content', '')
+        media_file = request.files.get('media')
+        media_name = None
+        media_type = None
+        if media_file and media_file.filename != '':
+            ext = media_file.filename.split('.')[-1].lower()
+            media_name = f"{uuid.uuid4().hex}.{ext}"
+            media_file.save(os.path.join(app.config['UPLOAD_FOLDER'], media_name))
+            media_type = 'video' if ext in ['mp4', 'mov', 'avi'] else 'image'
+        if content or media_name:
+            db.session.add(Message(sender=current_user.username, receiver=other_user, content=content, media=media_name, media_type=media_type))
+            db.session.commit()
+        return redirect(url_for('chat', other_user=other_user))
+    Message.query.filter_by(sender=other_user, receiver=current_user.username, is_read=False).update({"is_read": True})
+    db.session.commit()
+    msgs = Message.query.filter(or_(
+        and_(Message.sender == current_user.username, Message.receiver == other_user),
+        and_(Message.sender == other_user, Message.receiver == current_user.username)
+    )).order_by(Message.timestamp.asc()).all()
+    return render_template_string(CHAT_HTML, other_user=other_user, msgs=msgs)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
