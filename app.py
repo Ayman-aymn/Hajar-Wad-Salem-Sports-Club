@@ -99,16 +99,16 @@ with app.app_context():
 # ==========================================
 
 LINEUPS = [
-    {"name": "منذر", "number": 9, "top": "20%", "left": "15%"},
-    {"name": "مصعب", "number": 10, "top": "15%", "left": "50%"},
-    {"name": "أيمن", "number": 7, "top": "20%", "left": "85%"},
-    {"name": "محمد بلال", "number": 8, "top": "45%", "left": "15%"},
-    {"name": "عباس", "number": 6, "top": "45%", "left": "50%"},
-    {"name": "البخاري", "number": 14, "top": "45%", "left": "85%"},
-    {"name": "عبدالرحمن", "number": 3, "top": "75%", "left": "15%"},
-    {"name": "محمد", "number": 4, "top": "75%", "left": "38%"},
-    {"name": "أحمد", "number": 5, "top": "75%", "left": "62%"},
-    {"name": "محمد", "number": 2, "top": "75%", "left": "85%"},
+    {"name": "منذر", "number": 9, "top": "15%", "left": "15%"},
+    {"name": "مصعب", "number": 10, "top": "10%", "left": "50%"},
+    {"name": "أيمن", "number": 7, "top": "15%", "left": "85%"},
+    {"name": "محمد بلال", "number": 8, "top": "42%", "left": "15%"},
+    {"name": "عباس", "number": 6, "top": "42%", "left": "50%"},
+    {"name": "البخاري", "number": 14, "top": "42%", "left": "85%"},
+    {"name": "عبدالرحمن", "number": 3, "top": "72%", "left": "15%"},
+    {"name": "محمد", "number": 4, "top": "72%", "left": "38%"},
+    {"name": "أحمد", "number": 5, "top": "72%", "left": "62%"},
+    {"name": "محمد", "number": 2, "top": "72%", "left": "85%"},
     {"name": "النذير", "number": 1, "top": "92%", "left": "50%"},
 ]
 
@@ -134,13 +134,26 @@ BASE_HTML = """
         .bottom-nav i { font-size: 1.4rem; margin-bottom: 4px; }
         .badge-notify { background-color: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.65rem; position: absolute; top: -6px; left: -8px; box-shadow: 0 0 10px #ef4444; }
         
-        .pitch-container { position: relative; width: 100%; max-width: 600px; margin: 20px auto; aspect-ratio: 16 / 10; background: rgba(16,185,129,0.1); border: 2px solid var(--green-neon); box-shadow: 0 0 20px rgba(16,185,129,0.3); border-radius: 10px; overflow: hidden; }
-        .pitch-lines { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border: 2px solid rgba(16,185,129,0.5); margin: 10px; border-radius: 5px; }
-        .pitch-lines::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: rgba(16,185,129,0.5); }
-        .pitch-lines::after { content: ''; position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; border: 2px solid rgba(16,185,129,0.5); border-radius: 50%; transform: translate(-50%,-50%); }
+        .pitch-container { 
+            position: relative; 
+            width: 100vw; /* عرض الشاشة بالكامل */
+            height: 70vh; /* ارتفاع مناسب */
+            margin: 0 auto; 
+            background: repeating-linear-gradient(0deg, #2e7d32, #2e7d32 50px, #1b5e20 50px, #1b5e20 100px);
+            border-top: 3px solid white;
+            border-bottom: 3px solid white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+        /* خطوط الملعب */
+        .pitch-container::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 3px; background: rgba(255,255,255,0.5); }
+        .pitch-container::after { content: ''; position: absolute; top: 50%; left: 50%; width: 100px; height: 100px; border: 3px solid rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); }
+        .penalty-box-top { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 280px; height: 100px; border: 3px solid rgba(255,255,255,0.5); border-top: none; }
+        .penalty-box-bottom { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 280px; height: 100px; border: 3px solid rgba(255,255,255,0.5); border-bottom: none; }
+        
         .player-node { position: absolute; transform: translate(-50%, -50%); text-align: center; display: flex; flex-direction: column; align-items: center; width: 80px; }
-        .player-circle { background: rgba(2,6,23,0.9); color: var(--green-neon); width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; border: 2px solid var(--green-neon); box-shadow: 0 0 10px var(--green-neon); margin-bottom: 3px; }
-        .player-name { background: rgba(16,185,129,0.8); color: white; font-weight: 700; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; white-space: nowrap; box-shadow: 0 0 5px var(--green-neon); }
+        .player-circle { background: rgba(2,6,23,0.9); color: #10b981; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; border: 2px solid #10b981; box-shadow: 0 0 10px #10b981; margin-bottom: 3px; }
+        .player-name { background: rgba(16,185,129,0.8); color: white; font-weight: 700; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; white-space: nowrap; box-shadow: 0 0 5px #10b981; }
 
         .form-control { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; }
         .form-control:focus { background: rgba(255,255,255,0.1); border-color: var(--green-neon); box-shadow: 0 0 10px rgba(16,185,129,0.3); color: white; }
@@ -223,10 +236,11 @@ REGISTER_PAGE = BASE_HTML.replace('{% block content %}{% endblock %}', """
 """)
 
 PLAYERS_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
-<div class="container mt-3">
-    <h4 class="text-center mb-3" style="color: var(--gold-neon);">⭐⭐⭐⭐⭐ التشكيلة الأساسية</h4>
+<div class="pitch-wrapper">
+    <h4 class="text-center mb-2" style="color: var(--gold-neon); font-weight: 900; text-shadow: 0 0 15px rgba(251, 191, 36, 0.6);">تشكيلة فريق كرة قدم 4-3-3</h4>
     <div class="pitch-container">
-        <div class="pitch-lines"></div>
+        <div class="penalty-box-top"></div>
+        <div class="penalty-box-bottom"></div>
         {% for player in lineups %}
         <div class="player-node" style="top: {{ player.top }}; left: {{ player.left }};">
             <div class="player-circle">{{ player.number }}</div>
