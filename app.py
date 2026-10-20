@@ -95,24 +95,24 @@ with app.app_context():
         db.session.commit()
 
 LINEUPS = [
-    # الهجوم (3 مهاجمين)
-    {"name": "منذر", "position": "جناح يسار", "number": 9, "top": "12%", "left": "20%"},
+    # الهجوم
+    {"name": "منذر", "position": "جناح أيسر", "number": 9, "top": "15%", "left": "15%"},
     {"name": "مصعب", "position": "رأس حربة", "number": 10, "top": "10%", "left": "50%"},
-    {"name": "أيمن", "position": "جناح يمين", "number": 7, "top": "12%", "left": "80%"},
+    {"name": "أيمن", "position": "جناح أيمن", "number": 7, "top": "15%", "left": "85%"},
     
-    # الوسط (3 لاعبين)
-    {"name": "محمد بلال", "position": "وسط يسار", "number": 8, "top": "40%", "left": "20%"},
-    {"name": "عباس", "position": "وسط مركزي", "number": 6, "top": "38%", "left": "50%"},
-    {"name": "البخاري", "position": "وسط يمين", "number": 14, "top": "40%", "left": "80%"},
+    # الوسط
+    {"name": "محمد بلال", "position": "وسط أيسر", "number": 8, "top": "45%", "left": "15%"},
+    {"name": "عباس", "position": "وسط مركزي", "number": 6, "top": "45%", "left": "50%"},
+    {"name": "البخاري", "position": "وسط أيمن", "number": 14, "top": "45%", "left": "85%"},
     
-    # الدفاع (4 مدافعين)
-    {"name": "عبدالرحمن", "position": "ظهير أيسر", "number": 3, "top": "70%", "left": "10%"},
-    {"name": "محمد", "position": "قلب دفاع", "number": 4, "top": "68%", "left": "36%"},
-    {"name": "أحمد", "position": "قلب دفاع", "number": 5, "top": "68%", "left": "64%"},
-    {"name": "محمد", "position": "ظهير أيمن", "number": 2, "top": "70%", "left": "90%"},
+    # الدفاع
+    {"name": "عبدالرحمن", "position": "ظهير أيسر", "number": 3, "top": "75%", "left": "15%"},
+    {"name": "محمد", "position": "قلب دفاع", "number": 4, "top": "75%", "left": "38%"},
+    {"name": "أحمد", "position": "قلب دفاع", "number": 5, "top": "75%", "left": "62%"},
+    {"name": "محمد", "position": "ظهير أيمن", "number": 2, "top": "75%", "left": "85%"},
     
     # حراسة المرمى
-    {"name": "النذير", "position": "الحارس", "number": 1, "top": "88%", "left": "50%"},
+    {"name": "النذير", "position": "الحارس", "number": 1, "top": "92%", "left": "50%"},
 ]
 
 # ==========================================
