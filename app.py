@@ -97,6 +97,21 @@ with app.app_context():
 # ==========================================
 # القوالب (HTML)
 # ==========================================
+
+LINEUPS = [
+    {"name": "منذر", "number": 9, "top": "20%", "left": "15%"},
+    {"name": "مصعب", "number": 10, "top": "15%", "left": "50%"},
+    {"name": "أيمن", "number": 7, "top": "20%", "left": "85%"},
+    {"name": "محمد بلال", "number": 8, "top": "45%", "left": "15%"},
+    {"name": "عباس", "number": 6, "top": "45%", "left": "50%"},
+    {"name": "البخاري", "number": 14, "top": "45%", "left": "85%"},
+    {"name": "عبدالرحمن", "number": 3, "top": "75%", "left": "15%"},
+    {"name": "محمد", "number": 4, "top": "75%", "left": "38%"},
+    {"name": "أحمد", "number": 5, "top": "75%", "left": "62%"},
+    {"name": "محمد", "number": 2, "top": "75%", "left": "85%"},
+    {"name": "النذير", "number": 1, "top": "92%", "left": "50%"},
+]
+
 BASE_HTML = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
