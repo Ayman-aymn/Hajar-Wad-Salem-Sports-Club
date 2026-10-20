@@ -50,6 +50,13 @@ def load_user(user_id):
 
 with app.app_context():
     db.create_all()
+    # الترقيع لإضافة الأعمدة الجديدة إذا كانت قاعدة البيانات قديمة
+    try:
+        db.session.execute('ALTER TABLE user ADD COLUMN bio VARCHAR(255) DEFAULT ""')
+        db.session.execute('ALTER TABLE user ADD COLUMN profile_pic VARCHAR(255) DEFAULT "default.png"')
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
     if not User.query.first():
         admin = User(username='admin', password_hash=generate_password_hash('admin123'))
         db.session.add(admin)
