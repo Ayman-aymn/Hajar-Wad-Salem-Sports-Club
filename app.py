@@ -1,4 +1,4 @@
-from flask import Flask, render_template_string, request, redirect, url_for, flash, session
+from flask import Flask, render_template_string, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -11,7 +11,7 @@ app.config['SECRET_KEY'] = 'super-secret-key-for-club'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///club.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024 # 5MB max
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -21,7 +21,7 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # ==========================================
-# نماذج قاعدة البيانات (الجداول)
+# نماذج قاعدة البيانات (لن تتأثر بالكود الجديد)
 # ==========================================
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -56,7 +56,7 @@ with app.app_context():
         db.session.commit()
 
 # ==========================================
-# بيانات التشكيلة (مرتبة من الأسفل للأعلى)
+# بيانات التشكيلة
 # ==========================================
 PLAYERS = [
     {"name": "النذير", "position": "حارس مرمى", "number": 1},
@@ -73,7 +73,7 @@ PLAYERS = [
 ]
 
 # ==========================================
-# القوالب (HTML) - تصميم موحد
+# القوالب (HTML)
 # ==========================================
 BASE_HTML = """
 <!DOCTYPE html>
@@ -98,11 +98,9 @@ BASE_HTML = """
         .btn-gold:hover { background-color: #b8960c; color: white; }
         .auth-form { max-width: 400px; margin: 50px auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         footer { background-color: var(--primary-color); color: white; text-align: center; padding: 20px 0; margin-top: 50px; border-top: 4px solid var(--secondary-color); }
-        
         .player-badge { background: linear-gradient(135deg, var(--primary-color), #2e7d32); color: white; border-radius: 20px; padding: 20px 10px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.2); transition: transform 0.3s; border: 2px solid var(--secondary-color); }
         .player-badge:hover { transform: translateY(-5px); }
         .player-number-badge { background-color: var(--secondary-color); color: var(--primary-color); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; margin: 0 auto 10px auto; }
-        
         .post-card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .profile-pic { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--secondary-color); }
         .poll-btn { width: 100%; margin-bottom: 10px; text-align: right; font-weight: bold; }
@@ -147,6 +145,7 @@ BASE_HTML = """
 </html>
 """
 
+# --- قوالب الصفحات المستقلة ---
 INDEX_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <section class="hero-section">
     <div class="container">
@@ -160,19 +159,31 @@ INDEX_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 </div>
 """)
 
-AUTH_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
+LOGIN_PAGE = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="auth-form">
-    <h3 class="text-center mb-4" style="color: var(--primary-color);">{{ title }}</h3>
+    <h3 class="text-center mb-4" style="color: var(--primary-color);">تسجيل الدخول</h3>
     <form method="POST">
         <div class="mb-3"><label class="form-label">اسم المستخدم</label><input type="text" name="username" class="form-control" required></div>
         <div class="mb-3"><label class="form-label">كلمة المرور</label><input type="password" name="password" class="form-control" required></div>
-        <button type="submit" class="btn btn-gold w-100">{{ btn }}</button>
+        <button type="submit" class="btn btn-gold w-100">دخول</button>
     </form>
-    {% if title == 'تسجيل الدخول' %}
-        <p class="text-center mt-3"><a href="/register">ليس لديك حساب؟ سجل الآن</a></p>
-    {% else %}
-        <p class="text-center mt-3"><a href="/login">لديك حساب؟ سجل دخولك</a></p>
-    {% endif %}
+    <p class="text-center mt-3"><a href="/register">ليس لديك حساب؟ سجل الآن</a></p>
+</div>
+""")
+
+REGISTER_PAGE = BASE_HTML.replace('{% block content %}{% endblock %}', """
+<div class="auth-form">
+    <h3 class="text-center mb-4" style="color: var(--primary-color);">إنشاء حساب جديد</h3>
+    <form method="POST" enctype="multipart/form-data">
+        <div class="mb-3"><label class="form-label">اسم المستخدم</label><input type="text" name="username" class="form-control" required></div>
+        <div class="mb-3"><label class="form-label">كلمة المرور</label><input type="password" name="password" class="form-control" required></div>
+        <div class="mb-3">
+            <label class="form-label">صورة الحساب (اختياري)</label>
+            <input type="file" name="profile_pic" class="form-control" accept="image/*">
+        </div>
+        <button type="submit" class="btn btn-gold w-100">تسجيل</button>
+    </form>
+    <p class="text-center mt-3"><a href="/login">لديك حساب؟ سجل دخولك</a></p>
 </div>
 """)
 
@@ -256,7 +267,6 @@ POLLS_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
                     <button type="submit" class="btn btn-gold w-100">إنشاء التصويت</button>
                 </form>
             </div>
-            
             <h3 class="mb-3" style="color: var(--primary-color);">🗳️ التصويتات النشطة</h3>
             {% for poll in polls %}
             <div class="post-card mb-3">
@@ -294,7 +304,6 @@ PROFILE_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
                 {% endif %}
                 <h3 style="color: var(--primary-color);">{{ current_user.username }}</h3>
                 <p class="text-muted">{{ current_user.bio if current_user.bio else 'لا يوجد وصف بعد.' }}</p>
-                
                 <hr>
                 <h5 class="text-start">تعديل الحساب</h5>
                 <form method="POST" enctype="multipart/form-data">
@@ -303,7 +312,7 @@ PROFILE_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
                         <input type="text" name="bio" class="form-control" value="{{ current_user.bio }}">
                     </div>
                     <div class="mb-3 text-start">
-                        <label class="form-label">صورة الحساب</label>
+                        <label class="form-label">تغيير الصورة</label>
                         <input type="file" name="profile_pic" class="form-control" accept="image/*">
                     </div>
                     <button type="submit" class="btn btn-gold w-100">حفظ التعديلات</button>
@@ -314,8 +323,36 @@ PROFILE_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 </div>
 """)
 
+MESSAGES_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
+<div class="container mt-5">
+    <h2 style="color: var(--primary-color);">📬 صندوق الرسائل</h2>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card card-custom p-3">
+                <h5>إرسال رسالة</h5>
+                <form method="POST" action="/send_message">
+                    <div class="mb-2"><input type="text" name="receiver" class="form-control" placeholder="إلى (اسم المستخدم)" required></div>
+                    <div class="mb-2"><textarea name="content" class="form-control" placeholder="نص الرسالة..." rows="3" required></textarea></div>
+                    <button type="submit" class="btn btn-gold w-100">إرسال</button>
+                </form>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card card-custom p-3">
+                <h5>الرسائل الواردة</h5>
+                {% for msg in messages %}
+                    <div class="alert alert-info"><strong>{{ msg.sender }}:</strong> {{ msg.content }}</div>
+                {% else %}
+                    <p class="text-muted">لا توجد رسائل بعد.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+""")
+
 # ==========================================
-# المسارات (Routes) مع حماية login_required
+# المسارات
 # ==========================================
 @app.route('/')
 @login_required
@@ -380,38 +417,6 @@ def profile():
         return redirect(url_for('profile'))
     return render_template_string(PROFILE_HTML)
 
-# بقية المسارات (الرسائل، الدخول، إلخ)
-LOGIN_HTML = AUTH_HTML.replace('{{ title }}', 'تسجيل الدخول').replace('{{ btn }}', 'دخول')
-REGISTER_HTML = AUTH_HTML.replace('{{ title }}', 'إنشاء حساب').replace('{{ btn }}', 'تسجيل')
-
-MESSAGES_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
-<div class="container mt-5">
-    <h2 style="color: var(--primary-color);">📬 صندوق الرسائل</h2>
-    <div class="row">
-        <div class="col-md-4">
-            <div class="card card-custom p-3">
-                <h5>إرسال رسالة</h5>
-                <form method="POST" action="/send_message">
-                    <div class="mb-2"><input type="text" name="receiver" class="form-control" placeholder="إلى (اسم المستخدم)" required></div>
-                    <div class="mb-2"><textarea name="content" class="form-control" placeholder="نص الرسالة..." rows="3" required></textarea></div>
-                    <button type="submit" class="btn btn-gold w-100">إرسال</button>
-                </form>
-            </div>
-        </div>
-        <div class="col-md-8">
-            <div class="card card-custom p-3">
-                <h5>الرسائل الواردة</h5>
-                {% for msg in messages %}
-                    <div class="alert alert-info"><strong>{{ msg.sender }}:</strong> {{ msg.content }}</div>
-                {% else %}
-                    <p class="text-muted">لا توجد رسائل بعد.</p>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-</div>
-""")
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated: return redirect(url_for('home'))
@@ -421,20 +426,35 @@ def login():
             login_user(user)
             return redirect(url_for('home'))
         flash('اسم المستخدم أو كلمة المرور غير صحيحة', 'danger')
-    return render_template_string(LOGIN_HTML)
+    return render_template_string(LOGIN_PAGE)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    if current_user.is_authenticated: return redirect(url_for('home'))
     if request.method == 'POST':
-        if User.query.filter_by(username=request.form['username']).first():
+        username = request.form['username']
+        password = request.form['password']
+        if User.query.filter_by(username=username).first():
             flash('اسم المستخدم موجود بالفعل', 'danger')
             return redirect(url_for('register'))
-        new_user = User(username=request.form['username'], password_hash=generate_password_hash(request.form['password']))
+            
+        # إنشاء المستخدم
+        new_user = User(username=username, password_hash=generate_password_hash(password))
+        
+        # معالجة رفع الصورة (إذا وجدت)
+        if 'profile_pic' in request.files:
+            file = request.files['profile_pic']
+            if file and file.filename != '':
+                ext = file.filename.split('.')[-1]
+                filename = f"{uuid.uuid4().hex}.{ext}"
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                new_user.profile_pic = filename
+
         db.session.add(new_user)
         db.session.commit()
         flash('تم إنشاء الحساب! سجل دخولك الآن.', 'success')
         return redirect(url_for('login'))
-    return render_template_string(REGISTER_HTML)
+    return render_template_string(REGISTER_PAGE)
 
 @app.route('/logout')
 @login_required
