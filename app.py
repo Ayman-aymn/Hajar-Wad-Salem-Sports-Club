@@ -1,4 +1,4 @@
-from flask import Flask, render_template_string, request, redirect, url_for, flash
+from flask import Flask, render_template_string, request, redirect, url_for, flash, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -671,6 +671,11 @@ def chat(other_user):
         and_(Message.sender == other_user, Message.receiver == current_user.username)
     )).order_by(Message.timestamp.asc()).all()
     return render_template_string(CHAT_HTML, other_user=other_user, msgs=msgs)
+
+
+@app.route('/manifest.json')
+def manifest():
+    return send_from_directory('static', 'manifest.json')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
