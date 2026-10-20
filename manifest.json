@@ -1,0 +1,12 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "نسور حجرودسالم",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "نسور",
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "id": "com.nasour.club"
+}
