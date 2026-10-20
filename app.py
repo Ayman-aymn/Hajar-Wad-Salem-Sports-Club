@@ -18,6 +18,9 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+# ==========================================
+# نماذج قاعدة البيانات
+# ==========================================
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
@@ -91,21 +94,24 @@ with app.app_context():
         db.session.add(admin)
         db.session.commit()
 
-# التشكيلة (4-3-3 متباعدة)
+# التشكيلة (سيتم عرضها عبر Grid)
 LINEUPS = [
-    {"name": "منذر", "position": "جناح أيسر", "number": 9, "top": "12%", "left": "15%"},
-    {"name": "مصعب", "position": "رأس حربة", "number": 10, "top": "10%", "left": "50%"},
-    {"name": "أيمن", "position": "جناح أيمن", "number": 7, "top": "12%", "left": "85%"},
-    {"name": "محمد بلال", "position": "وسط أيسر", "number": 8, "top": "42%", "left": "15%"},
-    {"name": "عباس", "position": "وسط مركزي", "number": 6, "top": "42%", "left": "50%"},
-    {"name": "البخاري", "position": "وسط أيمن", "number": 14, "top": "42%", "left": "85%"},
-    {"name": "عبدالرحمن", "position": "ظهير أيسر", "number": 3, "top": "72%", "left": "15%"},
-    {"name": "محمد", "position": "قلب دفاع", "number": 4, "top": "72%", "left": "38%"},
-    {"name": "أحمد", "position": "قلب دفاع", "number": 5, "top": "72%", "left": "62%"},
-    {"name": "محمد", "position": "ظهير أيمن", "number": 2, "top": "72%", "left": "85%"},
-    {"name": "النذير", "position": "الحارس", "number": 1, "top": "92%", "left": "50%"},
+    {"name": "منذر", "position": "جناح أيسر", "number": 9},
+    {"name": "مصعب", "position": "رأس حربة", "number": 10},
+    {"name": "أيمن", "position": "جناح أيمن", "number": 7},
+    {"name": "محمد بلال", "position": "وسط أيسر", "number": 8},
+    {"name": "عباس", "position": "وسط مركزي", "number": 6},
+    {"name": "البخاري", "position": "وسط أيمن", "number": 14},
+    {"name": "عبدالرحمن", "position": "ظهير أيسر", "number": 3},
+    {"name": "محمد", "position": "قلب دفاع", "number": 4},
+    {"name": "أحمد", "position": "قلب دفاع", "number": 5},
+    {"name": "محمد", "position": "ظهير أيمن", "number": 2},
+    {"name": "النذير", "position": "الحارس", "number": 1},
 ]
 
+# ==========================================
+# القوالب (HTML)
+# ==========================================
 BASE_HTML = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -128,16 +134,31 @@ BASE_HTML = """
         .bottom-nav i { font-size: 1.4rem; margin-bottom: 4px; }
         .badge-notify { background-color: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.65rem; position: absolute; top: -6px; left: -8px; box-shadow: 0 0 10px #ef4444; }
         
-        /* الملعب العريض */
-        .pitch-wrapper { padding: 0; margin: 0; width: 100%; }
-        .pitch-container { position: relative; width: 100vw; height: 70vh; background: repeating-linear-gradient(0deg, #2e7d32, #2e7d32 40px, #1b5e20 40px, #1b5e20 80px); border-top: 3px solid white; border-bottom: 3px solid white; overflow: hidden; }
-        .pitch-container::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 3px; background: rgba(255,255,255,0.5); }
-        .pitch-container::after { content: ''; position: absolute; top: 50%; left: 50%; width: 120px; height: 120px; border: 3px solid rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); }
-        .penalty-box-top { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 300px; height: 100px; border: 3px solid rgba(255,255,255,0.5); border-top: none; }
-        .penalty-box-bottom { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 300px; height: 100px; border: 3px solid rgba(255,255,255,0.5); border-bottom: none; }
-        .player-node { position: absolute; transform: translate(-50%, -50%); text-align: center; display: flex; flex-direction: column; align-items: center; width: 80px; }
-        .player-icon { background: #1e3a8a; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; border: 2px solid white; margin-bottom: 2px; }
-        .player-name { background: rgba(0,0,0,0.7); color: white; font-weight: 800; font-size: 0.7rem; padding: 2px 4px; border-radius: 3px; white-space: nowrap; }
+        /* الملعب الجديد (CSS Grid) */
+        .pitch-wrapper { padding: 10px; margin: 0; width: 100%; }
+        .pitch-grid { 
+            display: grid; 
+            grid-template-rows: repeat(4, 1fr); /* 4 صفوف: هجوم، وسط، دفاع، حراسة */
+            width: 100%; 
+            height: 65vh; 
+            background: repeating-linear-gradient(0deg, #2e7d32, #2e7d32 40px, #1b5e20 40px, #1b5e20 80px); 
+            border: 3px solid white; 
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        /* خطوط الملعب */
+        .pitch-grid::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.4); }
+        .pitch-grid::after { content: ''; position: absolute; top: 50%; left: 50%; width: 80px; height: 80px; border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; transform: translate(-50%, -50%); }
+
+        .row-attack { display: flex; justify-content: space-around; align-items: center; padding: 0 10px; }
+        .row-mid { display: flex; justify-content: space-around; align-items: center; padding: 0 20px; }
+        .row-def { display: flex; justify-content: space-around; align-items: center; padding: 0 10px; }
+        .row-gk { display: flex; justify-content: center; align-items: center; }
+
+        .player-card { text-align: center; display: flex; flex-direction: column; align-items: center; }
+        .player-icon { background: #1e3a8a; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; border: 2px solid white; margin-bottom: 2px; box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
+        .player-name { background: rgba(0,0,0,0.8); color: white; font-weight: 800; font-size: 0.7rem; padding: 2px 4px; border-radius: 3px; white-space: nowrap; }
         .player-pos { color: #fbbf24; font-weight: 700; font-size: 0.6rem; text-shadow: 1px 1px 1px black; }
 
         .form-control { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; }
@@ -187,6 +208,7 @@ BASE_HTML = """
 </html>
 """
 
+# --- باقي الصفحات ---
 INDEX_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="glass-panel text-center mt-5">
     <i class="fas fa-dove fa-4x" style="color: var(--gold-neon); margin-bottom: 20px;"></i>
@@ -195,44 +217,34 @@ INDEX_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 </div>
 """)
 
-LOGIN_PAGE = BASE_HTML.replace('{% block content %}{% endblock %}', """
-<div class="glass-panel" style="max-width: 400px; margin: 50px auto;">
-    <h3 class="text-center mb-4" style="color: var(--green-neon);">تسجيل الدخول</h3>
-    <form method="POST">
-        <div class="mb-3"><label class="form-label text-light">اسم المستخدم</label><input type="text" name="username" class="form-control" required></div>
-        <div class="mb-3"><label class="form-label text-light">كلمة المرور</label><input type="password" name="password" class="form-control" required></div>
-        <button type="submit" class="btn btn-neon w-100">دخول</button>
-    </form>
-    <p class="text-center mt-3"><a href="/register" class="text-decoration-none" style="color: var(--gold-neon);">ليس لديك حساب؟ سجل الآن</a></p>
-</div>
-""")
-
-REGISTER_PAGE = BASE_HTML.replace('{% block content %}{% endblock %}', """
-<div class="glass-panel" style="max-width: 400px; margin: 50px auto;">
-    <h3 class="text-center mb-4" style="color: var(--green-neon);">إنشاء حساب جديد</h3>
-    <form method="POST" enctype="multipart/form-data">
-        <div class="mb-3"><label class="form-label text-light">اسم المستخدم</label><input type="text" name="username" class="form-control" required></div>
-        <div class="mb-3"><label class="form-label text-light">كلمة المرور</label><input type="password" name="password" class="form-control" required></div>
-        <div class="mb-3"><label class="form-label text-light">صورة الحساب (اختياري)</label><input type="file" name="profile_pic" class="form-control" accept="image/*"></div>
-        <button type="submit" class="btn btn-neon w-100">تسجيل</button>
-    </form>
-    <p class="text-center mt-3"><a href="/login" class="text-decoration-none" style="color: var(--gold-neon);">لديك حساب؟ سجل دخولك</a></p>
-</div>
-""")
-
+# صفحة التشكيلة الجديدة باستخدام Grid
 PLAYERS_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
-<div class="pitch-wrapper mt-3">
-    <h4 class="text-center mb-2" style="color: var(--gold-neon); font-weight: 900; text-shadow: 0 0 15px rgba(251, 191, 36, 0.6);">تشكيلة فريق كرة قدم 4-3-3</h4>
-    <div class="pitch-container">
-        <div class="penalty-box-top"></div>
-        <div class="penalty-box-bottom"></div>
-        {% for player in lineups %}
-        <div class="player-node" style="top: {{ player.top }}; left: {{ player.left }};">
-            <div class="player-icon"><i class="fas fa-tshirt"></i></div>
-            <div class="player-name">{{ player.name }}</div>
-            <div class="player-pos">({{ player.position }})</div>
+<div class="pitch-wrapper">
+    <h4 class="text-center mb-2" style="color: var(--gold-neon); font-weight: 900; text-shadow: 0 0 15px rgba(251,191,36,0.6);">تشكيلة فريق كرة قدم 4-3-3</h4>
+    <div class="pitch-grid">
+        <!-- الصف الأول: الهجوم -->
+        <div class="row-attack">
+            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">منذر</div><div class="player-pos">(جناح أيسر)</div></div>
+            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">مصعب</div><div class="player-pos">(رأس حربة)</div></div>
+            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">أيمن</div><div class="player-pos">(جناح أيمن)</div></div>
         </div>
-        {% endfor %}
+        <!-- الصف الثاني: الوسط -->
+        <div class="row-mid">
+            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">محمد بلال</div><div class="player-pos">(وسط أيسر)</div></div>
+            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">عباس</div><div class="player-pos">(وسط مركزي)</div></div>
+            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">البخاري</div><div class="player-pos">(وسط أيمن)</div></div>
+        </div>
+        <!-- الصف الثالث: الدفاع -->
+        <div class="row-def">
+            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">عبدالرحمن</div><div class="player-pos">(ظهير أيسر)</div></div>
+            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">محمد</div><div class="player-pos">(قلب دفاع)</div></div>
+            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">أحمد</div><div class="player-pos">(قلب دفاع)</div></div>
+            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">محمد</div><div class="player-pos">(ظهير أيمن)</div></div>
+        </div>
+        <!-- الصف الرابع: حراسة المرمى -->
+        <div class="row-gk">
+            <div class="player-card"><div class="player-icon"><i class="fas fa-tshirt"></i></div><div class="player-name">النذير</div><div class="player-pos">(الحارس)</div></div>
+        </div>
     </div>
 </div>
 """)
@@ -280,12 +292,10 @@ FEED_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
             {% if post.media_type == 'image' %}<img src="{{ url_for('static', filename='uploads/' + post.media) }}" class="media-content">
             {% elif post.media_type == 'video' %}<video controls class="media-content"><source src="{{ url_for('static', filename='uploads/' + post.media) }}"></video>{% endif %}
         {% endif %}
-        
         <div class="d-flex justify-content-between mt-3 pt-2 border-top border-secondary">
             <a href="/like/{{ post.id }}" class="text-decoration-none {% if post.is_liked %}text-danger{% else %}text-light{% endif %}"><i class="fas fa-heart"></i> {{ post.likes_count }}</a>
             <span class="text-light"><i class="fas fa-comment"></i> {{ post.comments|length }}</span>
         </div>
-        
         <div class="mt-2">
             {% for comment in post.comments %}
             <div class="text-light mb-1" style="font-size:0.85rem; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 5px;"><strong>{{ comment.author }}:</strong> {{ comment.content }}</div>
@@ -469,6 +479,9 @@ CHAT_HTML = """
 </html>
 """
 
+# ==========================================
+# المسارات
+# ==========================================
 @app.context_processor
 def inject_unread_count():
     if current_user.is_authenticated:
@@ -482,7 +495,7 @@ def home(): return render_template_string(INDEX_HTML)
 
 @app.route('/players')
 @login_required
-def players(): return render_template_string(PLAYERS_HTML, lineups=LINEUPS)
+def players(): return render_template_string(PLAYERS_HTML)
 
 @app.route('/matches')
 @login_required
