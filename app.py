@@ -133,13 +133,13 @@ BASE_HTML = """
         .bottom-nav i { font-size: 1.4rem; margin-bottom: 4px; }
         .badge-notify { background-color: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.65rem; position: absolute; top: -6px; left: -8px; box-shadow: 0 0 10px #ef4444; }
         
-        .pitch-container { position: relative; width: 100%; max-width: 600px; margin: 20px auto; aspect-ratio: 16 / 10; background: rgba(16,185,129,0.1); border: 2px solid var(--green-neon); box-shadow: 0 0 20px rgba(16,185,129,0.3); border-radius: 10px; overflow: hidden; }
-        .pitch-lines { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border: 2px solid rgba(16,185,129,0.5); margin: 10px; border-radius: 5px; }
-        .pitch-lines::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: rgba(16,185,129,0.5); }
-        .pitch-lines::after { content: ''; position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; border: 2px solid rgba(16,185,129,0.5); border-radius: 50%; transform: translate(-50%,-50%); }
-        .player-node { position: absolute; transform: translate(-50%, -50%); text-align: center; display: flex; flex-direction: column; align-items: center; width: 80px; }
-        .player-circle { background: rgba(2,6,23,0.9); color: var(--green-neon); width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; border: 2px solid var(--green-neon); box-shadow: 0 0 10px var(--green-neon); margin-bottom: 3px; }
-        .player-name { background: rgba(16,185,129,0.8); color: white; font-weight: 700; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; white-space: nowrap; box-shadow: 0 0 5px var(--green-neon); }
+        .pitch-container { position: relative; width: 100%; max-width: 600px; margin: 20px auto; aspect-ratio: 4 / 3; background: linear-gradient(135deg, #1e5631, #0f3d24); border: 3px solid #d4af37; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; }
+        .pitch-lines { position: absolute; top: 10px; left: 10px; right: 10px; bottom: 10px; border: 2px solid rgba(255,255,255,0.3); border-radius: 5px; }
+        .pitch-lines::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.3); }
+        .pitch-lines::after { content: ''; position: absolute; top: 50%; left: 50%; width: 80px; height: 80px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; transform: translate(-50%,-50%); }
+        .player-node { position: absolute; transform: translate(-50%, -50%); text-align: center; display: flex; flex-direction: column; align-items: center; width: 70px; }
+        .player-circle { background: #0f172a; color: #d4af37; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.2rem; border: 2px solid #d4af37; box-shadow: 0 4px 10px rgba(0,0,0,0.5); margin-bottom: 5px; }
+        .player-name { background: rgba(212, 175, 55, 0.9); color: #0f172a; font-weight: 900; font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
 
         .form-control { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; }
         .form-control:focus { background: rgba(255,255,255,0.1); border-color: var(--green-neon); box-shadow: 0 0 10px rgba(16,185,129,0.3); color: white; }
