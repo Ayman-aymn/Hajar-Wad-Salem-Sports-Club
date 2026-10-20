@@ -32,17 +32,32 @@ class Message(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# إنشاء الجداول إذا لم تكن موجودة
 with app.app_context():
     db.create_all()
-    # إضافة مستخدم مدير افتراضي إذا لم يوجد أي مستخدم
     if not User.query.first():
         admin = User(username='admin', password_hash=generate_password_hash('admin123'))
         db.session.add(admin)
         db.session.commit()
 
 # ==========================================
-# القوالب (HTML) - تصميم موحد
+# بيانات التشكيلة (الأسماء بدون صور)
+# ==========================================
+PLAYERS = [
+    {"name": "مصعب", "position": "حارس مرمى", "number": 1},
+    {"name": "أيمن", "position": "مدافع", "number": 4},
+    {"name": "مندر", "position": "مدافع", "number": 5},
+    {"name": "محمد بلال", "position": "وسط", "number": 6},
+    {"name": "عباس", "position": "وسط", "number": 8},
+    {"name": "البخاري", "position": "وسط", "number": 10},
+    {"name": "عبدالرحمن", "position": "مهاجم", "number": 7},
+    {"name": "محمد", "position": "مهاجم", "number": 9},
+    {"name": "ود الشفيع", "position": "مهاجم", "number": 11},
+    {"name": "احمد", "position": "وسط", "number": 14},
+    {"name": "النذير", "position": "مدافع", "number": 3},
+]
+
+# ==========================================
+# القوالب (HTML)
 # ==========================================
 BASE_HTML = """
 <!DOCTYPE html>
@@ -67,6 +82,50 @@ BASE_HTML = """
         .btn-gold:hover { background-color: #b8960c; color: white; }
         .auth-form { max-width: 400px; margin: 50px auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         footer { background-color: var(--primary-color); color: white; text-align: center; padding: 20px 0; margin-top: 50px; border-top: 4px solid var(--secondary-color); }
+        
+        /* تنسيق خاص للاعبين بدون صور */
+        .player-badge {
+            background: linear-gradient(135deg, var(--primary-color), #2e7d32);
+            color: white;
+            border-radius: 20px;
+            padding: 20px 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 2px solid var(--secondary-color);
+            position: relative;
+            overflow: hidden;
+        }
+        .player-badge:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        .player-number-badge {
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 900;
+            margin: 0 auto 10px auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            border: 2px solid white;
+        }
+        .player-name-text {
+            font-size: 1.3rem;
+            font-weight: 900;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .player-pos-text {
+            font-size: 0.9rem;
+            color: #ddd;
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
@@ -81,7 +140,7 @@ BASE_HTML = """
                     <li class="nav-item"><a class="nav-link" href="/matches">المباريات</a></li>
                     {% if current_user.is_authenticated %}
                         <li class="nav-item"><a class="nav-link text-warning" href="/messages">الرسائل</a></li>
-                        <li class="nav-item"><a class="nav-link text-danger" href="/logout">تسجيل خروج ({{ current_user.username }})</a></li>
+                        <li class="nav-item"><a class="nav-link text-danger" href="/logout">خروج ({{ current_user.username }})</a></li>
                     {% else %}
                         <li class="nav-item"><a class="nav-link text-warning" href="/login">تسجيل الدخول</a></li>
                     {% endif %}
@@ -169,25 +228,49 @@ MESSAGES_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 </div>
 """)
 
-# بيانات تجريبية للاعبين (كما هي)
-PLAYERS = [
-    {"name": "أحمد علي", "position": "مهاجم", "number": 9, "image": "https://i.pravatar.cc/150?img=11"},
-    {"name": "محمد حسن", "position": "وسط", "number": 8, "image": "https://i.pravatar.cc/150?img=12"},
-]
 PLAYERS_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
 <div class="container mt-5">
-    <h2 class="text-center mb-4" style="color: var(--primary-color);">⭐ نجوم الفريق ⭐</h2>
-    <div class="row g-4">
+    <h2 class="text-center mb-5" style="color: var(--primary-color); font-weight: 900;">⭐ التشكيلة الأساسية ⭐</h2>
+    <div class="row g-4 justify-content-center">
         {% for player in players %}
-        <div class="col-md-3 col-sm-6">
-            <div class="card card-custom text-center p-3">
-                <img src="{{ player.image }}" class="rounded-circle mx-auto mb-3" style="width: 120px; height: 120px; object-fit: cover; border: 3px solid var(--secondary-color);">
-                <h4 style="color: var(--primary-color);">{{ player.name }}</h4>
-                <p class="text-muted">{{ player.position }}</p>
-                <span class="badge bg-warning text-dark fs-6">{{ player.number }}</span>
+        <div class="col-md-3 col-6">
+            <div class="player-badge">
+                <div class="player-number-badge">{{ player.number }}</div>
+                <div class="player-name-text">{{ player.name }}</div>
+                <div class="player-pos-text">{{ player.position }}</div>
             </div>
         </div>
         {% endfor %}
+    </div>
+</div>
+""")
+
+MATCHES_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
+<div class="container mt-5">
+    <h2 class="text-center mb-5" style="color: var(--primary-color); font-weight: 900;">📅 جدول المباريات</h2>
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card card-custom match-card p-4 text-center">
+                <span class="badge bg-info text-dark mb-2">قادمة</span>
+                <h5>2026-11-01 | 17:00</h5>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <span class="fs-4 fw-bold">نسور حجرودسالم</span>
+                    <span class="fs-3 text-warning fw-bold">VS</span>
+                    <span class="fs-4 fw-bold">فريق الوحدة</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card card-custom match-card p-4 text-center">
+                <span class="badge bg-success mb-2">منتهية</span>
+                <h5>2026-10-20 | 16:30</h5>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <span class="fs-4 fw-bold">نسور حجرودسالم</span>
+                    <span class="fs-3 bg-light px-3 rounded fw-bold text-dark">3 - 1</span>
+                    <span class="fs-4 fw-bold">فريق الأمل</span>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 """)
@@ -200,6 +283,9 @@ def home(): return render_template_string(INDEX_HTML)
 
 @app.route('/players')
 def players(): return render_template_string(PLAYERS_HTML, players=PLAYERS)
+
+@app.route('/matches')
+def matches(): return render_template_string(MATCHES_HTML)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
