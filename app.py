@@ -667,15 +667,6 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-@app.route('/new_chat', methods=['POST'])
-@login_required
-def new_chat():
-    receiver = request.form['receiver']
-    if User.query.filter_by(username=receiver).first():
-        return redirect(url_for('chat', other_user=receiver))
-    flash('المستخدم غير موجود', 'danger')
-    return redirect(url_for('messages'))
-
 @app.route('/new_chat/<username>')
 @login_required
 def direct_chat(username):
@@ -750,14 +741,6 @@ def inject_unread_count():
         return dict(unread_count=count)
     except: return dict(unread_count=0)
     finally: session.close()
-
-@app.route('/new_chat', methods=['POST'])
-@login_required
-def new_chat():
-    receiver = request.form.get('receiver', '').strip()
-    if User.query.filter_by(username=receiver).first(): return redirect(url_for('chat', other_user=receiver))
-    flash('المستخدم غير موجود', 'danger')
-    return redirect(url_for('messages'))
 
 @app.route('/new_chat/<username>')
 @login_required
