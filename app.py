@@ -3,11 +3,15 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import or_, and_
-import os, uuid
+import os, uuid, requests
+from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, func
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'super-secret-key-for-club'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///club.db'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'super-secret-key-for-club')
+db_url = os.environ.get('DATABASE_URL', 'sqlite:///club.db')
+if db_url.startswith('postgres://'): db_url = db_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
@@ -19,7 +23,39 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # ==========================================
-# نماذج قاعدة البيانات
+# إعدادات Supabase (للرسائل فقط)
+# ==========================================
+SUPABASE_DB_URL = os.environ.get('SUPABASE_DB_URL', '')
+SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
+SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY', '')
+SUPABASE_BUCKET = os.environ.get('SUPABASE_BUCKET', 'uploads')
+
+supabase_engine = None
+SupabaseSession = None
+ChatMessage = None
+try:
+    if SUPABASE_DB_URL:
+        db_url_supa = SUPABASE_DB_URL
+        if db_url_supa.startswith('postgres://'): db_url_supa = db_url_supa.replace('postgres://', 'postgresql://', 1)
+        supabase_engine = create_engine(db_url_supa, pool_pre_ping=True)
+        SupabaseSession = sessionmaker(bind=supabase_engine)
+        SupabaseBase = declarative_base()
+        class ChatMessage(SupabaseBase):
+            __tablename__ = 'chat_messages'
+            id = Column(Integer, primary_key=True, autoincrement=True)
+            sender = Column(String(100), nullable=False, index=True)
+            receiver = Column(String(100), nullable=False, index=True)
+            content = Column(Text, nullable=True)
+            media_url = Column(Text, nullable=True)
+            media_type = Column(String(20), nullable=True)
+            timestamp = Column(DateTime, default=func.now(), index=True)
+            is_read = Column(Boolean, default=False)
+        SupabaseBase.metadata.create_all(supabase_engine, tables=[ChatMessage.__table__])
+        print("Supabase Chat Ready")
+except Exception as e: print(f"Supabase disabled: {e}")
+
+# ==========================================
+# نماذج قاعدة البيانات (SQLite)
 # ==========================================
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -60,55 +96,22 @@ class PollVote(db.Model):
     poll_id = db.Column(db.Integer, nullable=False)
     username = db.Column(db.String(100), nullable=False)
 
-class Message(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    sender = db.Column(db.String(100), nullable=False)
-    receiver = db.Column(db.String(100), nullable=False)
-    content = db.Column(db.Text, nullable=True)
-    media = db.Column(db.String(255), nullable=True)
-    media_type = db.Column(db.String(20), nullable=True)
-    timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
-    is_read = db.Column(db.Boolean, default=False)
-
 @login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+def load_user(user_id): return User.query.get(int(user_id))
 
 with app.app_context():
     db.create_all()
-    try:
-        db.session.execute('ALTER TABLE user ADD COLUMN bio VARCHAR(255) DEFAULT ""')
-        db.session.execute('ALTER TABLE user ADD COLUMN profile_pic VARCHAR(255) DEFAULT "default.png"')
-        db.session.execute('ALTER TABLE message ADD COLUMN is_read BOOLEAN DEFAULT 0')
-        db.session.execute('ALTER TABLE message ADD COLUMN media VARCHAR(255)')
-        db.session.execute('ALTER TABLE message ADD COLUMN media_type VARCHAR(20)')
-        db.session.execute('ALTER TABLE post ADD COLUMN media VARCHAR(255)')
-        db.session.execute('ALTER TABLE post ADD COLUMN media_type VARCHAR(20)')
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        
     admin_user = User.query.filter_by(username='Aymn').first()
     if not admin_user:
         admin = User(username='Aymn', password_hash=generate_password_hash('9910'))
-        db.session.add(admin)
-        db.session.commit()
-
-# ==========================================
-# القوالب (HTML)
-# ==========================================
+        db.session.add(admin); db.session.commit()
 
 LINEUPS = [
-    {"name": "منذر", "number": 9, "top": "15%", "left": "15%"},
-    {"name": "مصعب", "number": 10, "top": "10%", "left": "50%"},
-    {"name": "أيمن", "number": 7, "top": "15%", "left": "85%"},
-    {"name": "محمد بلال", "number": 8, "top": "42%", "left": "15%"},
-    {"name": "عباس", "number": 6, "top": "42%", "left": "50%"},
-    {"name": "البخاري", "number": 14, "top": "42%", "left": "85%"},
-    {"name": "عبدالرحمن", "number": 3, "top": "72%", "left": "15%"},
-    {"name": "محمد", "number": 4, "top": "72%", "left": "38%"},
-    {"name": "أحمد", "number": 5, "top": "72%", "left": "62%"},
-    {"name": "محمد", "number": 2, "top": "72%", "left": "85%"},
+    {"name": "منذر", "number": 9, "top": "15%", "left": "15%"}, {"name": "مصعب", "number": 10, "top": "10%", "left": "50%"},
+    {"name": "أيمن", "number": 7, "top": "15%", "left": "85%"}, {"name": "محمد بلال", "number": 8, "top": "42%", "left": "15%"},
+    {"name": "عباس", "number": 6, "top": "42%", "left": "50%"}, {"name": "البخاري", "number": 14, "top": "42%", "left": "85%"},
+    {"name": "عبدالرحمن", "number": 3, "top": "72%", "left": "15%"}, {"name": "محمد", "number": 4, "top": "72%", "left": "38%"},
+    {"name": "أحمد", "number": 5, "top": "72%", "left": "62%"}, {"name": "محمد", "number": 2, "top": "72%", "left": "85%"},
     {"name": "النذير", "number": 1, "top": "92%", "left": "50%"},
 ]
 
@@ -133,28 +136,14 @@ BASE_HTML = """
         .bottom-nav a.active { color: var(--green-neon); text-shadow: 0 0 8px var(--green-neon); }
         .bottom-nav i { font-size: 1.4rem; margin-bottom: 4px; }
         .badge-notify { background-color: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.65rem; position: absolute; top: -6px; left: -8px; box-shadow: 0 0 10px #ef4444; }
-        
-        .pitch-container { 
-            position: relative; 
-            width: 100vw; /* عرض الشاشة بالكامل */
-            height: 70vh; /* ارتفاع مناسب */
-            margin: 0 auto; 
-            background: repeating-linear-gradient(0deg, #2e7d32, #2e7d32 50px, #1b5e20 50px, #1b5e20 100px);
-            border-top: 3px solid white;
-            border-bottom: 3px solid white;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            overflow: hidden;
-        }
-        /* خطوط الملعب */
+        .pitch-container { position: relative; width: 100vw; height: 70vh; margin: 0 auto; background: repeating-linear-gradient(0deg, #2e7d32, #2e7d32 50px, #1b5e20 50px, #1b5e20 100px); border-top: 3px solid white; border-bottom: 3px solid white; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; }
         .pitch-container::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 3px; background: rgba(255,255,255,0.5); }
         .pitch-container::after { content: ''; position: absolute; top: 50%; left: 50%; width: 100px; height: 100px; border: 3px solid rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); }
         .penalty-box-top { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 280px; height: 100px; border: 3px solid rgba(255,255,255,0.5); border-top: none; }
         .penalty-box-bottom { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 280px; height: 100px; border: 3px solid rgba(255,255,255,0.5); border-bottom: none; }
-        
         .player-node { position: absolute; transform: translate(-50%, -50%); text-align: center; display: flex; flex-direction: column; align-items: center; width: 80px; }
         .player-circle { background: rgba(2,6,23,0.9); color: #10b981; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; border: 2px solid #10b981; box-shadow: 0 0 10px #10b981; margin-bottom: 3px; }
         .player-name { background: rgba(16,185,129,0.8); color: white; font-weight: 700; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; white-space: nowrap; box-shadow: 0 0 5px #10b981; }
-
         .form-control { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; }
         .form-control:focus { background: rgba(255,255,255,0.1); border-color: var(--green-neon); box-shadow: 0 0 10px rgba(16,185,129,0.3); color: white; }
         .form-control::placeholder { color: #94a3b8; }
@@ -173,7 +162,6 @@ BASE_HTML = """
             </div>
         {% endif %}
     </div>
-
     <div class="container mt-3">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -184,16 +172,12 @@ BASE_HTML = """
         {% endwith %}
     </div>
     {% block content %}{% endblock %}
-
     {% if current_user.is_authenticated %}
     <div class="bottom-nav">
         <a href="/" class="{% if request.path == '/' %}active{% endif %}"><i class="fas fa-home"></i> الرئيسية</a>
         <a href="/feed" class="{% if request.path == '/feed' %}active{% endif %}"><i class="fas fa-newspaper"></i> المنشورات</a>
         <a href="/players" class="{% if request.path == '/players' %}active{% endif %}"><i class="fas fa-users"></i> التشكيلة</a>
-        <a href="/messages" class="{% if request.path == '/messages' %}active{% endif %}">
-            <i class="fas fa-comment-dots"></i> الرسائل
-            {% if unread_count > 0 %}<span class="badge-notify">{{ unread_count }}</span>{% endif %}
-        </a>
+        <a href="/messages" class="{% if request.path == '/messages' or '/chat/' in request.path %}active{% endif %}"><i class="fas fa-comment-dots"></i> الرسائل {% if unread_count and unread_count > 0 %}<span class="badge bg-danger rounded-circle" style="position:absolute; top:-5px; left:-5px; font-size:0.6rem;">{{ unread_count }}</span>{% endif %}</a>
         <a href="/logout" class="{% if request.path == '/logout' %}active{% endif %}"><i class="fas fa-sign-out-alt"></i> خروج</a>
     </div>
     {% endif %}
@@ -280,7 +264,6 @@ FEED_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
             </div>
         </form>
     </div>
-
     {% for post in posts %}
     <div class="glass-panel">
         <div class="d-flex justify-content-between">
@@ -417,19 +400,20 @@ CHAT_HTML = """
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Tajawal', sans-serif; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; background: url('https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?q=80&w=2070&auto=format&fit=crop') no-repeat center center/cover; }
-        .chat-header { background: rgba(2,6,23,0.6); backdrop-filter: blur(10px); color: white; padding: 10px 15px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        :root { --green-neon: #10b981; }
+        body { font-family: 'Tajawal', sans-serif; margin: 0; height: 100vh; display: flex; flex-direction: column; background: url('https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?q=80&w=2070&auto=format&fit=crop') no-repeat center center/cover; }
+        .chat-header { background: rgba(2,6,23,0.85); backdrop-filter: blur(10px); color: white; padding: 10px 15px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .chat-header a { color: var(--green-neon); text-decoration: none; }
         .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; }
-        .msg-bubble { max-width: 80%; padding: 10px 14px; border-radius: 15px; margin-bottom: 15px; font-size: 0.95rem; position: relative; backdrop-filter: blur(10px); }
-        .msg-sent { background: rgba(16, 185, 129, 0.4); border: 1px solid var(--green-neon); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .msg-bubble { max-width: 80%; padding: 10px 14px; border-radius: 15px; margin-bottom: 15px; font-size: 0.95rem; position: relative; backdrop-filter: blur(10px); word-wrap: break-word; }
+        .msg-sent { background: rgba(16, 185, 129, 0.5); border: 1px solid var(--green-neon); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
         .msg-received { background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255,255,255,0.2); color: white; align-self: flex-start; border-bottom-left-radius: 2px; }
-        .chat-input-area { background: rgba(2,6,23,0.7); backdrop-filter: blur(15px); padding: 10px 15px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .chat-input-area { background: rgba(2,6,23,0.85); backdrop-filter: blur(15px); padding: 10px 15px; border-top: 1px solid rgba(255,255,255,0.1); }
         .input-wrapper { display: flex; align-items: center; background: rgba(255,255,255,0.1); border-radius: 30px; padding: 5px 15px; border: 1px solid rgba(255,255,255,0.2); }
-        .input-wrapper input { background: transparent; border: none; color: white; flex: 1; outline: none; }
+        .input-wrapper input[type=text] { background: transparent; border: none; color: white; flex: 1; outline: none; padding: 5px; }
         .input-wrapper input::placeholder { color: #94a3b8; }
         .icon-btn { background: transparent; border: none; color: var(--green-neon); font-size: 1.2rem; padding: 5px 10px; cursor: pointer; }
-        .media-chat { max-width: 100%; border-radius: 8px; margin-top: 5px; }
+        .media-chat { max-width: 100%; border-radius: 8px; margin-top: 5px; max-height: 300px; }
     </style>
 </head>
 <body>
@@ -437,32 +421,30 @@ CHAT_HTML = """
         <a href="/messages"><i class="fas fa-arrow-right fa-lg"></i></a>
         <div class="bg-secondary rounded-circle d-flex justify-content-center align-items-center" style="width: 40px; height: 40px; color: white; font-weight: bold; border: 1px solid var(--green-neon);">{{ other_user[0] }}</div>
         <strong class="fs-5">{{ other_user }}</strong>
-        <div class="ms-auto">
-            <button class="icon-btn" onclick="alert('ميزة المكالمات الصوتية تحتاج خادم WebRTC (قيد التطوير)')"><i class="fas fa-phone"></i></button>
-            <button class="icon-btn" onclick="alert('ميزة الفيديو قيد التطوير')"><i class="fas fa-video"></i></button>
-        </div>
     </div>
-    <div class="chat-messages">
+    <div class="chat-messages" id="chatMessages">
         {% for msg in msgs %}
             {% if msg.sender == current_user.username %}
                 <div class="msg-bubble msg-sent">
                     {% if msg.content %}{{ msg.content }}{% endif %}
-                    {% if msg.media %}
-                        {% if msg.media_type == 'image' %}<img src="{{ url_for('static', filename='uploads/' + msg.media) }}" class="media-chat">
-                        {% elif msg.media_type == 'video' %}<video controls class="media-chat"><source src="{{ url_for('static', filename='uploads/' + msg.media) }}"></video>{% endif %}
+                    {% if msg.media_url %}
+                        {% if msg.media_type == 'image' %}<img src="{{ msg.media_url }}" class="media-chat">
+                        {% elif msg.media_type == 'video' %}<video controls class="media-chat"><source src="{{ msg.media_url }}"></video>{% endif %}
                     {% endif %}
-                    <div style="font-size:0.6rem; text-align:left; margin-top:5px; opacity:0.7;">{{ msg.timestamp.strftime('%H:%M') }} <i class="fas fa-check-double" style="color: #60a5fa;"></i></div>
+                    <div style="font-size:0.65rem; text-align:left; margin-top:5px; opacity:0.7;">{{ msg.timestamp.strftime('%H:%M') }} <i class="fas fa-check-double" style="color: #60a5fa;"></i></div>
                 </div>
             {% else %}
                 <div class="msg-bubble msg-received">
                     {% if msg.content %}{{ msg.content }}{% endif %}
-                    {% if msg.media %}
-                        {% if msg.media_type == 'image' %}<img src="{{ url_for('static', filename='uploads/' + msg.media) }}" class="media-chat">
-                        {% elif msg.media_type == 'video' %}<video controls class="media-chat"><source src="{{ url_for('static', filename='uploads/' + msg.media) }}"></video>{% endif %}
+                    {% if msg.media_url %}
+                        {% if msg.media_type == 'image' %}<img src="{{ msg.media_url }}" class="media-chat">
+                        {% elif msg.media_type == 'video' %}<video controls class="media-chat"><source src="{{ msg.media_url }}"></video>{% endif %}
                     {% endif %}
-                    <div style="font-size:0.6rem; text-align:left; margin-top:5px; opacity:0.7;">{{ msg.timestamp.strftime('%H:%M') }}</div>
+                    <div style="font-size:0.65rem; text-align:left; margin-top:5px; opacity:0.7;">{{ msg.timestamp.strftime('%H:%M') }}</div>
                 </div>
             {% endif %}
+        {% else %}
+            <p class="text-center text-light opacity-50 mt-5">لا توجد رسائل بعد. ابدأ المحادثة!</p>
         {% endfor %}
     </div>
     <div class="chat-input-area">
@@ -470,31 +452,111 @@ CHAT_HTML = """
             <label for="chat-media" class="icon-btn mb-0" style="cursor: pointer;"><i class="fas fa-camera"></i></label>
             <input type="file" name="media" id="chat-media" class="d-none" accept="image/*,video/*" onchange="this.form.submit()">
             <div class="input-wrapper flex-grow-1">
-                <button type="button" class="icon-btn" onclick="alert('جاري تسجيل الصوت... (محاكاة)')"><i class="fas fa-microphone"></i></button>
                 <input type="text" name="content" placeholder="اكتب رسالة..." autocomplete="off">
-                <button type="button" class="icon-btn"><i class="fas fa-smile"></i></button>
             </div>
             <button type="submit" class="btn rounded-circle" style="background: var(--green-neon); color: #020617; width: 45px; height: 45px; box-shadow: 0 0 10px var(--green-neon);"><i class="fas fa-paper-plane"></i></button>
         </form>
     </div>
+    <script>const chatDiv = document.getElementById('chatMessages'); chatDiv.scrollTop = chatDiv.scrollHeight;</script>
 </body>
 </html>
 """
 
 # ==========================================
-# المسارات
+# المسارات (Routes)
 # ==========================================
 @app.context_processor
 def inject_unread_count():
-    if current_user.is_authenticated:
-        count = Message.query.filter_by(receiver=current_user.username, is_read=False).count()
+    if not current_user.is_authenticated: return dict(unread_count=0)
+    session = get_chat_session()
+    if session is None: return dict(unread_count=0)
+    try:
+        count = session.query(ChatMessage).filter_by(receiver=current_user.username, is_read=False).count()
         return dict(unread_count=count)
-    return dict(unread_count=0)
+    except Exception: return dict(unread_count=0)
+    finally: session.close()
 
-@app.route('/manifest.json')
-def manifest():
-    return send_from_directory('static', 'manifest.json')
+def get_chat_session():
+    if SupabaseSession is None: return None
+    return SupabaseSession()
 
+def upload_chat_media(file_storage):
+    if not file_storage or file_storage.filename == '': return None, None
+    ext = file_storage.filename.rsplit('.', 1)[-1].lower()
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    is_video = ext in ('mp4', 'mov', 'avi', 'webm', 'mkv')
+    media_type = 'video' if is_video else 'image'
+    if SUPABASE_URL and SUPABASE_SERVICE_KEY:
+        try:
+            file_bytes = file_storage.read()
+            content_type = f"{media_type}/{ext if ext != 'jpg' else 'jpeg'}"
+            url = f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{filename}"
+            headers = {"Authorization": f"Bearer {SUPABASE_SERVICE_KEY}", "Content-Type": content_type}
+            res = requests.post(url, headers=headers, data=file_bytes)
+            if res.status_code in [200, 201]:
+                return f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{filename}", media_type
+        except Exception: pass
+    try:
+        file_storage.seek(0)
+        file_storage.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        return url_for('static', filename=f'uploads/{filename}', _external=True), media_type
+    except Exception: return None, None
+
+@app.route('/messages')
+@login_required
+def messages():
+    session = get_chat_session()
+    if session is None:
+        flash('خدمة الرسائل غير متاحة حالياً', 'danger')
+        return redirect(url_for('home'))
+    try:
+        all_msgs = session.query(ChatMessage).filter(or_(ChatMessage.sender == current_user.username, ChatMessage.receiver == current_user.username)).all()
+        contacts = set()
+        for m in all_msgs:
+            if m.sender != current_user.username: contacts.add(m.sender)
+            if m.receiver != current_user.username: contacts.add(m.receiver)
+        chats = [{"username": c, "unread": session.query(ChatMessage).filter_by(sender=c, receiver=current_user.username, is_read=False).count()} for c in contacts]
+        return render_template_string(MESSAGES_LIST_HTML, chats=chats)
+    finally: session.close()
+
+@app.route('/new_chat', methods=['POST'])
+@login_required
+def new_chat():
+    receiver = request.form.get('receiver', '').strip()
+    if User.query.filter_by(username=receiver).first(): return redirect(url_for('chat', other_user=receiver))
+    flash('المستخدم غير موجود', 'danger')
+    return redirect(url_for('messages'))
+
+@app.route('/new_chat/<username>')
+@login_required
+def direct_chat(username): return redirect(url_for('chat', other_user=username))
+
+@app.route('/chat/<other_user>', methods=['GET', 'POST'])
+@login_required
+def chat(other_user):
+    if not User.query.filter_by(username=other_user).first():
+        flash('المستخدم غير موجود', 'danger')
+        return redirect(url_for('messages'))
+    session = get_chat_session()
+    if session is None: return redirect(url_for('messages'))
+    try:
+        if request.method == 'POST':
+            content = request.form.get('content', '').strip()
+            media_url, media_type = upload_chat_media(request.files.get('media'))
+            if content or media_url:
+                session.add(ChatMessage(sender=current_user.username, receiver=other_user, content=content or None, media_url=media_url, media_type=media_type))
+                session.commit()
+            return redirect(url_for('chat', other_user=other_user))
+        session.query(ChatMessage).filter_by(sender=other_user, receiver=current_user.username, is_read=False).update({"is_read": True})
+        session.commit()
+        msgs = session.query(ChatMessage).filter(or_(and_(ChatMessage.sender == current_user.username, ChatMessage.receiver == other_user), and_(ChatMessage.sender == other_user, ChatMessage.receiver == current_user.username))).order_by(ChatMessage.timestamp.asc()).all()
+        msgs_data = [{'sender': m.sender, 'content': m.content, 'media_url': m.media_url, 'media_type': m.media_type, 'timestamp': m.timestamp} for m in msgs]
+        return render_template_string(CHAT_HTML, other_user=other_user, msgs=msgs_data)
+    finally: session.close()
+
+# ==========================================
+# المسارات الأصلية للمنصة
+# ==========================================
 @app.route('/')
 @login_required
 def home(): return render_template_string(INDEX_HTML)
@@ -524,7 +586,6 @@ def feed():
             db.session.add(Post(author=current_user.username, content=content, media=media_name, media_type=media_type))
             db.session.commit()
         return redirect(url_for('feed'))
-
     posts = Post.query.order_by(Post.timestamp.desc()).all()
     for post in posts:
         post.likes_count = PostLike.query.filter_by(post_id=post.id).count()
@@ -624,198 +685,6 @@ def register():
 def logout():
     logout_user()
     return redirect(url_for('login'))
-
-@app.route('/messages')
-@login_required
-def messages():
-    all_msgs = Message.query.filter(or_(Message.sender == current_user.username, Message.receiver == current_user.username)).all()
-    contacts = set()
-    for m in all_msgs:
-        if m.sender != current_user.username: contacts.add(m.sender)
-        if m.receiver != current_user.username: contacts.add(m.receiver)
-    chats = []
-    for c in contacts:
-        unread = Message.query.filter_by(sender=c, receiver=current_user.username, is_read=False).count()
-        chats.append({"username": c, "unread": unread})
-    return render_template_string(MESSAGES_LIST_HTML, chats=chats)
-
-@app.route('/new_chat', methods=['POST'])
-@login_required
-def new_chat():
-    receiver = request.form['receiver']
-    if User.query.filter_by(username=receiver).first():
-        return redirect(url_for('chat', other_user=receiver))
-    flash('المستخدم غير موجود', 'danger')
-    return redirect(url_for('messages'))
-
-@app.route('/new_chat/<username>')
-@login_required
-def direct_chat(username):
-    return redirect(url_for('chat', other_user=username))
-
-@app.route('/chat/<other_user>', methods=['GET', 'POST'])
-@login_required
-def chat(other_user):
-    if request.method == 'POST':
-        content = request.form.get('content', '')
-        media_file = request.files.get('media')
-        media_name = None
-        media_type = None
-        if media_file and media_file.filename != '':
-            ext = media_file.filename.split('.')[-1].lower()
-            media_name = f"{uuid.uuid4().hex}.{ext}"
-            media_file.save(os.path.join(app.config['UPLOAD_FOLDER'], media_name))
-            media_type = 'video' if ext in ['mp4', 'mov', 'avi'] else 'image'
-        if content or media_name:
-            db.session.add(Message(sender=current_user.username, receiver=other_user, content=content, media=media_name, media_type=media_type))
-            db.session.commit()
-        return redirect(url_for('chat', other_user=other_user))
-    Message.query.filter_by(sender=other_user, receiver=current_user.username, is_read=False).update({"is_read": True})
-    db.session.commit()
-    msgs = Message.query.filter(or_(
-        and_(Message.sender == current_user.username, Message.receiver == other_user),
-        and_(Message.sender == other_user, Message.receiver == current_user.username)
-    )).order_by(Message.timestamp.asc()).all()
-    return render_template_string(CHAT_HTML, other_user=other_user, msgs=msgs)
-
-
-# ==========================================
-# إعدادات Supabase (للرسائل فقط)
-# ==========================================
-import requests
-SUPABASE_DB_URL = os.environ.get('SUPABASE_DB_URL', '')
-SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
-SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY', '')
-SUPABASE_BUCKET = os.environ.get('SUPABASE_BUCKET', 'uploads')
-
-supabase_engine = None
-SupabaseSession = None
-ChatMessage = None
-try:
-    if SUPABASE_DB_URL:
-        from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, func, or_, and_
-        from sqlalchemy.orm import sessionmaker, declarative_base
-        db_url = SUPABASE_DB_URL
-        if db_url.startswith('postgres://'): db_url = db_url.replace('postgres://', 'postgresql://', 1)
-        supabase_engine = create_engine(db_url, pool_pre_ping=True)
-        SupabaseSession = sessionmaker(bind=supabase_engine)
-        SupabaseBase = declarative_base()
-        class ChatMessage(SupabaseBase):
-            __tablename__ = 'chat_messages'
-            id = Column(Integer, primary_key=True, autoincrement=True)
-            sender = Column(String(100), nullable=False, index=True)
-            receiver = Column(String(100), nullable=False, index=True)
-            content = Column(Text, nullable=True)
-            media_url = Column(Text, nullable=True)
-            media_type = Column(String(20), nullable=True)
-            timestamp = Column(DateTime, default=func.now(), index=True)
-            is_read = Column(Boolean, default=False)
-        SupabaseBase.metadata.create_all(supabase_engine, tables=[ChatMessage.__table__])
-except Exception as e: print(f"Supabase disabled: {e}")
-
-def get_chat_session():
-    if SupabaseSession is None: return None
-    return SupabaseSession()
-
-def upload_chat_media(file_storage):
-    if not file_storage or file_storage.filename == '': return None, None
-    ext = file_storage.filename.rsplit('.', 1)[-1].lower()
-    filename = f"{uuid.uuid4().hex}.{ext}"
-    is_video = ext in ('mp4', 'mov', 'avi', 'webm', 'mkv')
-    media_type = 'video' if is_video else 'image'
-    if SUPABASE_URL and SUPABASE_SERVICE_KEY:
-        try:
-            file_bytes = file_storage.read()
-            content_type = f"{media_type}/{ext if ext != 'jpg' else 'jpeg'}"
-            url = f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{filename}"
-            headers = {"Authorization": f"Bearer {SUPABASE_SERVICE_KEY}", "Content-Type": content_type}
-            res = requests.post(url, headers=headers, data=file_bytes)
-            if res.status_code in [200, 201]:
-                return f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{filename}", media_type
-        except Exception: pass
-    try:
-        file_storage.seek(0)
-        file_storage.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        return url_for('static', filename=f'uploads/{filename}', _external=True), media_type
-    except Exception: return None, None
-
-@app.context_processor
-def inject_unread_count():
-    if not current_user.is_authenticated: return dict(unread_count=0)
-    session = get_chat_session()
-    if session is None: return dict(unread_count=0)
-    try:
-        count = session.query(ChatMessage).filter_by(receiver=current_user.username, is_read=False).count()
-        return dict(unread_count=count)
-    except Exception: return dict(unread_count=0)
-    finally: session.close()
-
-@app.route('/messages')
-@login_required
-def messages():
-    session = get_chat_session()
-    if session is None: return redirect(url_for('home'))
-    try:
-        all_msgs = session.query(ChatMessage).filter(or_(ChatMessage.sender == current_user.username, ChatMessage.receiver == current_user.username)).all()
-        contacts = set()
-        for m in all_msgs:
-            if m.sender != current_user.username: contacts.add(m.sender)
-            if m.receiver != current_user.username: contacts.add(m.receiver)
-        chats = [{"username": c, "unread": session.query(ChatMessage).filter_by(sender=c, receiver=current_user.username, is_read=False).count()} for c in contacts]
-        return render_template_string(MESSAGES_LIST_HTML, chats=chats)
-    finally: session.close()
-
-@app.route('/new_chat', methods=['POST'])
-@login_required
-def new_chat():
-    receiver = request.form.get('receiver', '').strip()
-    if User.query.filter_by(username=receiver).first(): return redirect(url_for('chat', other_user=receiver))
-    return redirect(url_for('messages'))
-
-@app.route('/new_chat/<username>')
-@login_required
-def direct_chat(username): return redirect(url_for('chat', other_user=username))
-
-@app.route('/chat/<other_user>', methods=['GET', 'POST'])
-@login_required
-def chat(other_user):
-    if not User.query.filter_by(username=other_user).first(): return redirect(url_for('messages'))
-    session = get_chat_session()
-    if session is None: return redirect(url_for('messages'))
-    try:
-        if request.method == 'POST':
-            content = request.form.get('content', '').strip()
-            media_url, media_type = upload_chat_media(request.files.get('media'))
-            if content or media_url:
-                session.add(ChatMessage(sender=current_user.username, receiver=other_user, content=content or None, media_url=media_url, media_type=media_type))
-                session.commit()
-            return redirect(url_for('chat', other_user=other_user))
-        session.query(ChatMessage).filter_by(sender=other_user, receiver=current_user.username, is_read=False).update({"is_read": True})
-        session.commit()
-        msgs = session.query(ChatMessage).filter(or_(and_(ChatMessage.sender == current_user.username, ChatMessage.receiver == other_user), and_(ChatMessage.sender == other_user, ChatMessage.receiver == current_user.username))).order_by(ChatMessage.timestamp.asc()).all()
-        msgs_data = [{'sender': m.sender, 'content': m.content, 'media_url': m.media_url, 'media_type': m.media_type, 'timestamp': m.timestamp} for m in msgs]
-        return render_template_string(CHAT_HTML, other_user=other_user, msgs=msgs_data)
-    finally: session.close()
-
-MESSAGES_LIST_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
-<div class="container mt-3"><div class="glass-panel"><h5 class="mb-3 fw-bold" style="color: var(--green-neon);">المحادثات</h5>
-<form method="POST" action="/new_chat" class="d-flex gap-2 mb-4"><input type="text" name="receiver" class="form-control" placeholder="ابحث عن اسم المستخدم..." required style="border-radius: 20px;"><button type="submit" class="btn btn-neon rounded-circle"><i class="fas fa-search"></i></button></form>
-{% for chat in chats %}<a href="/chat/{{ chat.username }}" class="d-flex align-items-center p-3 mb-2 text-decoration-none text-light" style="background: rgba(255,255,255,0.05); border-radius: 15px;"><div class="bg-secondary rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 50px; height: 50px; color: white; font-weight: bold; font-size: 1.2rem;">{{ chat.username[0] }}</div><div class="flex-grow-1"><h6 class="mb-0 fw-bold" style="color: var(--green-neon);">{{ chat.username }}</h6><small class="text-muted">اضغط للمحادثة</small></div>{% if chat.unread > 0 %}<span class="badge bg-danger rounded-pill">{{ chat.unread }}</span>{% endif %}</a>{% else %}<p class="text-muted text-center mt-3">لا توجد محادثات بعد.</p>{% endfor %}
-</div></div>""")
-
-CHAT_HTML = """<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>محادثة مع {{ other_user }}</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
-<style>:root { --green-neon: #10b981; } body { font-family: 'Tajawal', sans-serif; margin: 0; height: 100vh; display: flex; flex-direction: column; background: url('https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?q=80&w=2070&auto=format&fit=crop') no-repeat center center/cover; }
-.chat-header { background: rgba(2,6,23,0.85); backdrop-filter: blur(10px); color: white; padding: 10px 15px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); } .chat-header a { color: var(--green-neon); text-decoration: none; }
-.chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; } .msg-bubble { max-width: 80%; padding: 10px 14px; border-radius: 15px; margin-bottom: 15px; font-size: 0.95rem; position: relative; backdrop-filter: blur(10px); word-wrap: break-word; }
-.msg-sent { background: rgba(16, 185, 129, 0.5); border: 1px solid var(--green-neon); color: white; align-self: flex-end; border-bottom-right-radius: 2px; } .msg-received { background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255,255,255,0.2); color: white; align-self: flex-start; border-bottom-left-radius: 2px; }
-.chat-input-area { background: rgba(2,6,23,0.85); backdrop-filter: blur(15px); padding: 10px 15px; border-top: 1px solid rgba(255,255,255,0.1); } .input-wrapper { display: flex; align-items: center; background: rgba(255,255,255,0.1); border-radius: 30px; padding: 5px 15px; border: 1px solid rgba(255,255,255,0.2); }
-.input-wrapper input[type=text] { background: transparent; border: none; color: white; flex: 1; outline: none; padding: 5px; } .input-wrapper input::placeholder { color: #94a3b8; } .icon-btn { background: transparent; border: none; color: var(--green-neon); font-size: 1.2rem; padding: 5px 10px; cursor: pointer; } .media-chat { max-width: 100%; border-radius: 8px; margin-top: 5px; max-height: 300px; }</style></head><body>
-<div class="chat-header"><a href="/messages"><i class="fas fa-arrow-right fa-lg"></i></a><div class="bg-secondary rounded-circle d-flex justify-content-center align-items-center" style="width: 40px; height: 40px; color: white; font-weight: bold; border: 1px solid var(--green-neon);">{{ other_user[0] }}</div><strong class="fs-5">{{ other_user }}</strong></div>
-<div class="chat-messages" id="chatMessages">{% for msg in msgs %}{% if msg.sender == current_user.username %}<div class="msg-bubble msg-sent">{% if msg.content %}{{ msg.content }}{% endif %}{% if msg.media_url %}{% if msg.media_type == 'image' %}<img src="{{ msg.media_url }}" class="media-chat">{% elif msg.media_type == 'video' %}<video controls class="media-chat"><source src="{{ msg.media_url }}"></video>{% endif %}{% endif %}<div style="font-size:0.65rem; text-align:left; margin-top:5px; opacity:0.7;">{{ msg.timestamp.strftime('%H:%M') }} <i class="fas fa-check-double" style="color: #60a5fa;"></i></div></div>
-{% else %}<div class="msg-bubble msg-received">{% if msg.content %}{{ msg.content }}{% endif %}{% if msg.media_url %}{% if msg.media_type == 'image' %}<img src="{{ msg.media_url }}" class="media-chat">{% elif msg.media_type == 'video' %}<video controls class="media-chat"><source src="{{ msg.media_url }}"></video>{% endif %}{% endif %}<div style="font-size:0.65rem; text-align:left; margin-top:5px; opacity:0.7;">{{ msg.timestamp.strftime('%H:%M') }}</div></div>{% endif %}{% else %}<p class="text-center text-light opacity-50 mt-5">لا توجد رسائل بعد. ابدأ المحادثة!</p>{% endfor %}</div>
-<div class="chat-input-area"><form action="/chat/{{ other_user }}" method="POST" enctype="multipart/form-data" class="d-flex align-items-center gap-2"><label for="chat-media" class="icon-btn mb-0" style="cursor: pointer;"><i class="fas fa-camera"></i></label><input type="file" name="media" id="chat-media" class="d-none" accept="image/*,video/*" onchange="this.form.submit()"><div class="input-wrapper flex-grow-1"><input type="text" name="content" placeholder="اكتب رسالة..." autocomplete="off"></div><button type="submit" class="btn rounded-circle" style="background: var(--green-neon); color: #020617; width: 45px; height: 45px; box-shadow: 0 0 10px var(--green-neon);"><i class="fas fa-paper-plane"></i></button></form></div>
-<script>const chatDiv = document.getElementById('chatMessages'); chatDiv.scrollTop = chatDiv.scrollHeight;</script></body></html>"""
 
 @app.route('/health')
 def health():
