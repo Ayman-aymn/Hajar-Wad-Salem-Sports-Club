@@ -667,20 +667,6 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-@app.route('/messages')
-@login_required
-def messages():
-    all_msgs = Message.query.filter(or_(Message.sender == current_user.username, Message.receiver == current_user.username)).all()
-    contacts = set()
-    for m in all_msgs:
-        if m.sender != current_user.username: contacts.add(m.sender)
-        if m.receiver != current_user.username: contacts.add(m.receiver)
-    chats = []
-    for c in contacts:
-        unread = Message.query.filter_by(sender=c, receiver=current_user.username, is_read=False).count()
-        chats.append({"username": c, "unread": unread})
-    return render_template_string(MESSAGES_LIST_HTML, chats=chats)
-
 @app.route('/new_chat', methods=['POST'])
 @login_required
 def new_chat():
@@ -763,23 +749,6 @@ def inject_unread_count():
         count = session.query(ChatMessage).filter_by(receiver=current_user.username, is_read=False).count()
         return dict(unread_count=count)
     except: return dict(unread_count=0)
-    finally: session.close()
-
-@app.route('/messages')
-@login_required
-def messages():
-    session = get_chat_session()
-    if session is None:
-        flash('خدمة الرسائل غير متاحة حالياً', 'danger')
-        return redirect(url_for('home'))
-    try:
-        all_msgs = session.query(ChatMessage).filter(or_(ChatMessage.sender == current_user.username, ChatMessage.receiver == current_user.username)).all()
-        contacts = set()
-        for m in all_msgs:
-            if m.sender != current_user.username: contacts.add(m.sender)
-            if m.receiver != current_user.username: contacts.add(m.receiver)
-        chats = [{"username": c, "unread": session.query(ChatMessage).filter_by(sender=c, receiver=current_user.username, is_read=False).count()} for c in contacts]
-        return render_template_string(MESSAGES_LIST_HTML, chats=chats)
     finally: session.close()
 
 @app.route('/new_chat', methods=['POST'])
