@@ -1,12 +1,16 @@
 {
-  "background_color": "#ffffff",
-  "dir": "ltr",
-  "display": "standalone",
   "name": "نسور حجرودسالم",
-  "orientation": "any",
-  "scope": "/",
   "short_name": "نسور",
   "start_url": "/",
-  "theme_color": "#ffffff",
-  "id": "com.nasour.club"
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#10b981",
+  "description": "منصة نادي نسور حجرودسالم",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/53/53283.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
