@@ -159,6 +159,7 @@ BASE_HTML = """
                 <a href="/polls" class="text-white" title="التصويت"><i class="fas fa-poll"></i></a>
                 <a href="/matches" class="text-white" title="المباريات"><i class="fas fa-calendar-alt"></i></a>
                 <a href="/profile" class="text-white" title="حسابي"><i class="fas fa-user-circle"></i></a>
+                {% if current_user.username == 'Aymn' %}<a href="/admin" class="text-warning" title="لوحة التحكم"><i class="fas fa-chart-pie"></i></a>{% endif %}
             </div>
         {% endif %}
     </div>
@@ -408,7 +409,7 @@ CHAT_HTML = """
         .msg-bubble { max-width: 80%; padding: 10px 14px; border-radius: 15px; margin-bottom: 15px; font-size: 0.95rem; position: relative; backdrop-filter: blur(10px); word-wrap: break-word; }
         .msg-sent { background: rgba(16, 185, 129, 0.5); border: 1px solid var(--green-neon); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
         .msg-received { background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255,255,255,0.2); color: white; align-self: flex-start; border-bottom-left-radius: 2px; }
-        .chat-input-area { background: rgba(2,6,23,0.85); backdrop-filter: blur(15px); padding: 10px 15px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .chat-input-area { background: rgba(2,6,23,0.85); backdrop-filter: blur(15px); padding: 10px 10px; border-top: 1px solid rgba(255,255,255,0.1); position: sticky; bottom: 0; width: 100%; }
         .input-wrapper { display: flex; align-items: center; background: rgba(255,255,255,0.1); border-radius: 30px; padding: 5px 15px; border: 1px solid rgba(255,255,255,0.2); }
         .input-wrapper input[type=text] { background: transparent; border: none; color: white; flex: 1; outline: none; padding: 5px; }
         .input-wrapper input::placeholder { color: #94a3b8; }
@@ -450,9 +451,10 @@ CHAT_HTML = """
         {% endfor %}
     </div>
     <div class="chat-input-area">
-        <form action="/chat/{{ other_user }}" method="POST" enctype="multipart/form-data" class="d-flex align-items-center gap-2">
+        <form action="/chat/{{ other_user }}" method="POST" enctype="multipart/form-data" class="d-flex align-items-center gap-1">
             <label for="chat-media" class="icon-btn mb-0" style="cursor: pointer;"><i class="fas fa-camera"></i></label>
             <input type="file" name="media" id="chat-media" class="d-none" accept="image/*,video/*" onchange="this.form.submit()">
+            <button type="button" id="recordBtn" class="icon-btn" style="color: #ef4444; padding: 5px;"><i class="fas fa-microphone"></i></button>
             <div class="input-wrapper flex-grow-1">
                 <input type="text" name="content" placeholder="اكتب رسالة..." autocomplete="off">
             </div>
@@ -728,3 +730,74 @@ def health():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
+
+# ==========================================
+# لوحة تحكم المشرف (خاصة بـ Aymn فقط)
+# ==========================================
+ADMIN_DASHBOARD_HTML = BASE_HTML.replace('{% block content %}{% endblock %}', """
+<div class="container mt-4">
+    <div class="glass-panel text-center">
+        <h3 style="color: var(--gold-neon);"><i class="fas fa-chart-pie"></i> لوحة التحكم</h3>
+        <p class="text-light">مرحباً بك يا مدير المنصة</p>
+        <hr class="border-secondary">
+        <div class="row mt-4">
+            <div class="col-6 mb-3">
+                <div class="p-3 rounded" style="background: rgba(16,185,129,0.1); border: 1px solid var(--green-neon);">
+                    <h5 class="mb-0">المستخدمين</h5>
+                    <h2 style="color: var(--green-neon);">{{ stats.users }}</h2>
+                </div>
+            </div>
+            <div class="col-6 mb-3">
+                <div class="p-3 rounded" style="background: rgba(251,191,36,0.1); border: 1px solid var(--gold-neon);">
+                    <h5 class="mb-0">المنشورات</h5>
+                    <h2 style="color: var(--gold-neon);">{{ stats.posts }}</h2>
+                </div>
+            </div>
+            <div class="col-6 mb-3">
+                <div class="p-3 rounded" style="background: rgba(96,165,250,0.1); border: 1px solid #60a5fa;">
+                    <h5 class="mb-0">الرسائل</h5>
+                    <h2 style="color: #60a5fa;">{{ stats.messages }}</h2>
+                </div>
+            </div>
+            <div class="col-6 mb-3">
+                <div class="p-3 rounded" style="background: rgba(239,68,68,0.1); border: 1px solid #ef4444;">
+                    <h5 class="mb-0">التصويتات</h5>
+                    <h2 style="color: #ef4444;">{{ stats.polls }}</h2>
+                </div>
+            </div>
+        </div>
+        <hr class="border-secondary">
+        <h5 class="text-start mt-3" style="color: var(--green-neon);">آخر 5 مستخدمين:</h5>
+        <ul class="list-group list-group-flush text-start">
+            {% for u in stats.recent_users %}
+            <li class="list-group-item bg-transparent text-light border-secondary">{{ u.username }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+""")
+
+@app.route('/admin')
+@login_required
+def admin_dashboard():
+    if current_user.username != 'Aymn':
+        return redirect(url_for('home'))
+        
+    session = get_chat_session()
+    messages_count = 0
+    if session:
+        try:
+            messages_count = session.query(ChatMessage).count()
+        except: pass
+        finally: session.close()
+        
+    recent_users = User.query.order_by(User.id.desc()).limit(5).all()
+    
+    stats = {
+        'users': User.query.count(),
+        'posts': Post.query.count(),
+        'messages': messages_count,
+        'polls': Poll.query.count(),
+        'recent_users': recent_users
+    }
+    return render_template_string(ADMIN_DASHBOARD_HTML, stats=stats)
