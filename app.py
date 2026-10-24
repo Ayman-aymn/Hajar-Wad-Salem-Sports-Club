@@ -429,7 +429,8 @@ CHAT_HTML = """
                     {% if msg.content %}{{ msg.content }}{% endif %}
                     {% if msg.media_url %}
                         {% if msg.media_type == 'image' %}<img src="{{ msg.media_url }}" class="media-chat">
-                        {% elif msg.media_type == 'video' %}<video controls class="media-chat"><source src="{{ msg.media_url }}"></video>{% endif %}
+                        {% elif msg.media_type == 'video' %}<video controls class="media-chat"><source src="{{ msg.media_url }}"></video>
+                        {% elif msg.media_type == 'audio' %}<audio controls class="media-chat" style="width: 100%;"><source src="{{ msg.media_url }}"></audio>{% endif %}
                     {% endif %}
                     <div style="font-size:0.65rem; text-align:left; margin-top:5px; opacity:0.7;">{{ msg.timestamp.strftime('%H:%M') }} <i class="fas fa-check-double" style="color: #60a5fa;"></i></div>
                 </div>
@@ -438,7 +439,8 @@ CHAT_HTML = """
                     {% if msg.content %}{{ msg.content }}{% endif %}
                     {% if msg.media_url %}
                         {% if msg.media_type == 'image' %}<img src="{{ msg.media_url }}" class="media-chat">
-                        {% elif msg.media_type == 'video' %}<video controls class="media-chat"><source src="{{ msg.media_url }}"></video>{% endif %}
+                        {% elif msg.media_type == 'video' %}<video controls class="media-chat"><source src="{{ msg.media_url }}"></video>
+                        {% elif msg.media_type == 'audio' %}<audio controls class="media-chat" style="width: 100%;"><source src="{{ msg.media_url }}"></audio>{% endif %}
                     {% endif %}
                     <div style="font-size:0.65rem; text-align:left; margin-top:5px; opacity:0.7;">{{ msg.timestamp.strftime('%H:%M') }}</div>
                 </div>
@@ -457,7 +459,35 @@ CHAT_HTML = """
             <button type="submit" class="btn rounded-circle" style="background: var(--green-neon); color: #020617; width: 45px; height: 45px; box-shadow: 0 0 10px var(--green-neon);"><i class="fas fa-paper-plane"></i></button>
         </form>
     </div>
-    <script>const chatDiv = document.getElementById('chatMessages'); chatDiv.scrollTop = chatDiv.scrollHeight;</script>
+    <script>
+    const chatDiv = document.getElementById('chatMessages');
+    chatDiv.scrollTop = chatDiv.scrollHeight;
+    let mediaRecorder; let audioChunks = [];
+    const recordBtn = document.getElementById('recordBtn');
+    recordBtn.addEventListener('click', async () => {
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+            mediaRecorder.stop();
+            recordBtn.style.color = '#ef4444';
+            recordBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+            return;
+        }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.ondataavailable = event => { audioChunks.push(event.data); };
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const file = new File([audioBlob], "voice.webm", { type: 'audio/webm' });
+                const formData = new FormData(); formData.append('media', file);
+                fetch(window.location.href, { method: 'POST', body: formData }).then(() => { window.location.reload(); });
+                audioChunks = []; stream.getTracks().forEach(track => track.stop());
+            };
+            mediaRecorder.start();
+            recordBtn.style.color = '#020617';
+            recordBtn.innerHTML = '<i class="fas fa-stop"></i>';
+        } catch (err) { alert('يرجى السماح بالوصول إلى الميكروفون.'); }
+    });
+</script>
 </body>
 </html>
 """
@@ -484,12 +514,13 @@ def upload_chat_media(file_storage):
     if not file_storage or file_storage.filename == '': return None, None
     ext = file_storage.filename.rsplit('.', 1)[-1].lower()
     filename = f"{uuid.uuid4().hex}.{ext}"
-    is_video = ext in ('mp4', 'mov', 'avi', 'webm', 'mkv')
-    media_type = 'video' if is_video else 'image'
+    if ext in ('mp4', 'mov', 'avi', 'webm', 'mkv'): media_type = 'video'
+    elif ext in ('mp3', 'wav', 'ogg', 'webm', 'm4a', 'aac'): media_type = 'audio'
+    else: media_type = 'image'
     if SUPABASE_URL and SUPABASE_SERVICE_KEY:
         try:
             file_bytes = file_storage.read()
-            content_type = f"{media_type}/{ext if ext != 'jpg' else 'jpeg'}"
+            content_type = f"{media_type}/{ext}"
             url = f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{filename}"
             headers = {"Authorization": f"Bearer {SUPABASE_SERVICE_KEY}", "Content-Type": content_type}
             res = requests.post(url, headers=headers, data=file_bytes)
